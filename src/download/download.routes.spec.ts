@@ -37,7 +37,7 @@ function contexte(maxUses = 5) {
     currency: CATALOG[0].currency,
   });
 
-  const app = Fastify({ maxParamLength: DOWNLOAD_MAX_PARAM_LENGTH });
+  const app = Fastify({ routerOptions: { maxParamLength: DOWNLOAD_MAX_PARAM_LENGTH } });
   app.register(downloadRoutes, { config, orders });
 
   return { app, db, orders, config, dataDir };

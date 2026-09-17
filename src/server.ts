@@ -26,7 +26,12 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
   // Le logger Fastify est désactivé : toute l'observabilité passe par
   // src/logger.ts, pour qu'un incident de livraison se lise dans un seul flux
   // au format unique plutôt que dans deux formats entremêlés.
-  const app = Fastify({ logger: false, maxParamLength: DOWNLOAD_MAX_PARAM_LENGTH });
+  const app = Fastify({
+    logger: false,
+    // routerOptions et non maxParamLength à la racine : cette dernière forme
+    // est dépréciée et disparaît en Fastify 6.
+    routerOptions: { maxParamLength: DOWNLOAD_MAX_PARAM_LENGTH },
+  });
 
   // `..` depuis le répertoire du module : src/ en développement, dist/ une fois
   // compilé. Le Dockerfile copie public/ à côté de dist/, les deux résolvent

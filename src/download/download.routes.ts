@@ -12,7 +12,7 @@ import { verifyDownloadToken } from '../tokens/download-token';
 export type DownloadOptions = { config: AppConfig; orders: OrdersRepository };
 
 /**
- * Longueur maximale d'un paramètre d'URL, à passer à la fabrique Fastify.
+ * Longueur maximale d'un paramètre d'URL, à passer dans `routerOptions`.
  *
  * Fastify plafonne à 100 caractères par défaut et répond 414 au-delà. Un token
  * de téléchargement porte un identifiant de session Stripe (~66 caractères) et

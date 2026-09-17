@@ -8,7 +8,39 @@
   <body>
     <!-- Page volontairement non designée : le design est le chantier suivant,
          une fois le flow de paiement prouvé de bout en bout. -->
-    <h1>Ebooks Grindrise</h1>
-    <p>Page produit et bouton d'achat.</p>
+    <h1>Guide d'entraînement Grindrise</h1>
+    <p>Le programme complet pour structurer sa progression.</p>
+    <p><strong>19,90 €</strong></p>
+
+    <button id="acheter" type="button">Acheter</button>
+    <p id="erreur" role="alert" hidden></p>
+
+    <script>
+      const bouton = document.getElementById('acheter');
+      const erreur = document.getElementById('erreur');
+
+      bouton.addEventListener('click', async () => {
+        // Désactiver pendant l'appel : un double clic créerait deux sessions
+        // Stripe, donc deux pages de paiement pour un seul acheteur.
+        bouton.disabled = true;
+        erreur.hidden = true;
+
+        try {
+          const reponse = await fetch('/api/checkout', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ productId: 'entrainement' }),
+          });
+
+          if (!reponse.ok) throw new Error('Paiement indisponible');
+          const { url } = await reponse.json();
+          window.location.assign(url);
+        } catch {
+          erreur.textContent = 'Le paiement est momentanément indisponible. Réessayez.';
+          erreur.hidden = false;
+          bouton.disabled = false;
+        }
+      });
+    </script>
   </body>
 </html>
