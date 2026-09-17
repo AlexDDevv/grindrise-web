@@ -5,6 +5,7 @@ import fastifyStatic from '@fastify/static';
 import Fastify, { type FastifyInstance } from 'fastify';
 import type Stripe from 'stripe';
 
+import { checkoutRoutes } from './checkout/checkout.routes';
 import type { AppConfig } from './config/env.config';
 import type { OrdersRepository } from './db/orders.repository';
 import type { EmailProvider } from './email/email-provider';
@@ -47,6 +48,8 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
 
   app.get('/success', async (_request, reply) => reply.sendFile('success.html'));
   app.get('/cancel', async (_request, reply) => reply.sendFile('cancel.html'));
+
+  await app.register(checkoutRoutes, { config: deps.config, stripe: deps.stripe });
 
   return app;
 }
