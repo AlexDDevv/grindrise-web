@@ -3,6 +3,7 @@ import { DatabaseSync } from 'node:sqlite';
 import type { AppConfig } from './config/env.config';
 import { applySchema } from './db/database';
 import { OrdersRepository } from './db/orders.repository';
+import { DeliveryService } from './delivery/delivery.service';
 import type { EmailProvider } from './email/email-provider';
 import { buildServer, type ServerDeps } from './server';
 
@@ -24,8 +25,16 @@ function deps(): ServerDeps {
   const db = new DatabaseSync(':memory:');
   applySchema(db);
   const email: EmailProvider = { name: 'fake', send: jest.fn(async () => undefined) };
+  const orders = new OrdersRepository(db);
 
-  return { config, db, orders: new OrdersRepository(db), email, stripe: {} as never };
+  return {
+    config,
+    db,
+    orders,
+    email,
+    stripe: {} as never,
+    delivery: new DeliveryService({ orders, email, config }),
+  };
 }
 
 describe('buildServer', () => {

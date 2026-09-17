@@ -8,7 +8,9 @@ import type Stripe from 'stripe';
 import { checkoutRoutes } from './checkout/checkout.routes';
 import type { AppConfig } from './config/env.config';
 import type { OrdersRepository } from './db/orders.repository';
+import type { DeliveryService } from './delivery/delivery.service';
 import type { EmailProvider } from './email/email-provider';
+import { webhookRoutes } from './webhook/webhook.routes';
 
 export type ServerDeps = {
   config: AppConfig;
@@ -16,6 +18,7 @@ export type ServerDeps = {
   orders: OrdersRepository;
   email: EmailProvider;
   stripe: Stripe;
+  delivery: DeliveryService;
 };
 
 export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
@@ -50,6 +53,12 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
   app.get('/cancel', async (_request, reply) => reply.sendFile('cancel.html'));
 
   await app.register(checkoutRoutes, { config: deps.config, stripe: deps.stripe });
+  await app.register(webhookRoutes, {
+    config: deps.config,
+    stripe: deps.stripe,
+    orders: deps.orders,
+    delivery: deps.delivery,
+  });
 
   return app;
 }
