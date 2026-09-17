@@ -6,6 +6,7 @@ import { OrdersRepository } from './db/orders.repository';
 import { DeliveryService } from './delivery/delivery.service';
 import type { EmailProvider } from './email/email-provider';
 import { buildServer, type ServerDeps } from './server';
+import { signDownloadToken } from './tokens/download-token';
 
 const config: AppConfig = {
   port: 0,
@@ -68,6 +69,23 @@ describe('buildServer', () => {
 
     expect(reponse.statusCode).toBe(200);
     expect(reponse.headers['content-type']).toContain('text/html');
+    await app.close();
+  });
+
+  it('accepte un token de téléchargement de longueur réaliste', async () => {
+    // Fastify plafonne les paramètres d'URL à 100 caractères et répond 414
+    // au-delà. Un token signé sur un vrai identifiant de session Stripe en fait
+    // près du double : sans maxParamLength relevé, aucun lien de livraison ne
+    // fonctionne en production. Les tests de download/ montent leur propre
+    // instance Fastify, ce test verrouille la configuration réelle.
+    const app = await buildServer(deps());
+    const sessionStripe = `cs_test_${'a1b2c3d4e5'.repeat(6)}`;
+    const token = signDownloadToken(sessionStripe, config.downloadTokenSecret, 7);
+
+    const reponse = await app.inject({ method: 'GET', url: `/api/download/${token}` });
+
+    expect(token.length).toBeGreaterThan(100);
+    expect(reponse.statusCode).not.toBe(414);
     await app.close();
   });
 
