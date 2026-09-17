@@ -1,0 +1,18 @@
+node_modules/
+dist/
+coverage/
+
+# Variables d'environnement (les .env.example, eux, sont commités)
+.env
+.env.*
+!.env.example
+
+# Notes de travail personnelles, non versionnées.
+docs/
+
+# Données locales : base SQLite et PDF des ebooks.
+# En production elles vivent dans le volume CapRover monté sur /data.
+data/
+*.db
+*.db-journal
+*.db-wal
