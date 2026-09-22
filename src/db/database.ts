@@ -38,6 +38,35 @@ export function applySchema(db: DatabaseSync): void {
       paid_at             TEXT,
       delivered_at        TEXT
     );
+
+    -- Journal d'audit : ce que le serveur a fait de chaque commande et de
+    -- chaque paiement, dans l'ordre. La table orders ne garde que l'état courant ;
+    -- l'historique vit ici. order_id et payment_id sont tous deux nullables :
+    -- une notification pour un paiement inconnu se trace sans commande.
+    -- Aucune clé étrangère volontairement : une trace doit pouvoir citer une
+    -- commande introuvable, c'est précisément ce qu'elle signale.
+    CREATE TABLE IF NOT EXISTS order_events (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id    TEXT,
+      payment_id  TEXT,
+      type        TEXT NOT NULL,
+      detail      TEXT,
+      created_at  TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS order_events_order_id ON order_events (order_id);
+    CREATE INDEX IF NOT EXISTS order_events_payment_id ON order_events (payment_id);
+
+    -- Journal en ajout seul, garanti par la base et non par la discipline du
+    -- code : une trace modifiable après coup ne prouve rien. Une purge au terme
+    -- de la durée de conservation devra supprimer ces triggers explicitement.
+    CREATE TRIGGER IF NOT EXISTS order_events_no_update
+      BEFORE UPDATE ON order_events
+      BEGIN SELECT RAISE(ABORT, 'order_events est en ajout seul'); END;
+
+    CREATE TRIGGER IF NOT EXISTS order_events_no_delete
+      BEFORE DELETE ON order_events
+      BEGIN SELECT RAISE(ABORT, 'order_events est en ajout seul'); END;
   `);
 }
 

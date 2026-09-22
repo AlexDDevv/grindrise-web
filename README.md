@@ -67,7 +67,8 @@ premier paiement.
 
 ```
 /data
-├── orders.db        base SQLite (commandes et leur paiement PayPlug)
+├── orders.db        base SQLite : commandes (état courant) et journal
+│                    d'audit en ajout seul, conservés 10 ans
 └── ebooks/          les PDF vendus, déposés manuellement
 ```
 

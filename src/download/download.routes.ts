@@ -39,12 +39,22 @@ export async function downloadRoutes(
     if (!commande) {
       // Token signé mais commande absente : base restaurée, ou secret réutilisé
       // entre deux environnements. Anormal, donc journalisé.
+      orders.recordEvent({
+        type: 'download_refused',
+        orderId,
+        detail: { reason: 'order_not_found' },
+      });
       logger.error('Token valide sans commande correspondante', { orderId });
       return reply.code(403).send({ error: 'Lien invalide ou expiré.' });
     }
 
     const produit = findProduct(commande.productId);
     if (!produit) {
+      orders.recordEvent({
+        type: 'download_refused',
+        orderId,
+        detail: { reason: 'product_not_in_catalog' },
+      });
       logger.error('Produit absent du catalogue', {
         orderId,
         productId: commande.productId,
@@ -59,6 +69,7 @@ export async function downloadRoutes(
     // Le fichier est vérifié AVANT de consommer le quota : un PDF manquant est
     // notre panne, elle ne doit pas coûter un téléchargement à l'acheteur.
     if (!existsSync(chemin)) {
+      orders.recordEvent({ type: 'download_refused', orderId, detail: { reason: 'file_missing' } });
       logger.error('PDF introuvable dans le volume', { orderId, chemin });
       return reply.code(500).send({ error: 'Fichier indisponible.' });
     }

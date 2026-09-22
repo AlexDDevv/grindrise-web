@@ -214,6 +214,74 @@ describe('POST /api/payplug/notification', () => {
     db.close();
   });
 
+  describe('traçabilité', () => {
+    const types = (orders: OrdersRepository) => orders.listEvents('ord_1').map((e) => e.type);
+
+    it('trace le parcours complet d’un paiement réussi puis rejoué', async () => {
+      const { app, db, orders } = contexte();
+
+      await app.inject(notification());
+      await app.inject(notification());
+
+      expect(types(orders)).toEqual([
+        'order_created',
+        'payment_created',
+        'notification_received',
+        'payment_confirmed',
+        'email_sent',
+        'notification_received',
+        'payment_already_processed',
+      ]);
+      await app.close();
+      db.close();
+    });
+
+    it('trace une notification forgée : ce qui était affirmé et ce qui a été vérifié', async () => {
+      const { app, db, orders } = contexte(async () =>
+        paiement({ is_paid: false, failure: { code: 'card_declined', message: 'Refusée' } }),
+      );
+
+      await app.inject(notification({ is_paid: true }));
+
+      const [recue, verifiee] = orders.listEvents('ord_1').slice(-2);
+      expect(recue).toMatchObject({ type: 'notification_received', paymentId: PAYMENT_ID });
+      expect(verifiee).toMatchObject({
+        type: 'payment_not_paid',
+        detail: { failure: { code: 'card_declined' } },
+      });
+      await app.close();
+      db.close();
+    });
+
+    it('trace un écart de montant', async () => {
+      const { app, db, orders } = contexte(async () => paiement({ amount: 1 }));
+
+      await app.inject(notification());
+
+      expect(orders.listEvents('ord_1').at(-1)).toMatchObject({
+        type: 'payment_mismatch',
+        detail: { reason: 'amount_mismatch' },
+      });
+      await app.close();
+      db.close();
+    });
+
+    it('trace l’échec de vérification auprès de PayPlug', async () => {
+      const { app, db, orders } = contexte(async () => {
+        throw new PayPlugError('PayPlug a répondu 503.', 503);
+      });
+
+      await app.inject(notification());
+
+      expect(orders.listEvents('ord_1').at(-1)).toMatchObject({
+        type: 'verification_failed',
+        detail: { status: 503 },
+      });
+      await app.close();
+      db.close();
+    });
+  });
+
   it("répond 200 même si l'envoi d'email échoue", async () => {
     // Une erreur ferait renvoyer la notification alors que le paiement, lui,
     // est bien enregistré — et chaque renvoi retenterait un envoi en échec.

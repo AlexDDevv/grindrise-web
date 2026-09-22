@@ -29,7 +29,7 @@ export class DeliveryService {
     if (!produit) {
       // Un produit retiré du catalogue alors qu'une commande le référence : le
       // signaler bruyamment plutôt qu'envoyer un email sans lien exploitable.
-      orders.markDeliveryFailed(order.id);
+      orders.markDeliveryFailed(order.id, 'product_not_in_catalog');
       throw new Error(
         `Produit ${order.productId} absent du catalogue, commande ${order.id} non livrée.`,
       );
@@ -49,16 +49,13 @@ export class DeliveryService {
     try {
       await email.send({ to: { email: order.email }, ...message });
     } catch (error) {
-      orders.markDeliveryFailed(order.id);
-      logger.error('Livraison échouée', {
-        orderId: order.id,
-        productId: produit.id,
-        reason: error instanceof Error ? error.message : String(error),
-      });
+      const reason = error instanceof Error ? error.message : String(error);
+      orders.markDeliveryFailed(order.id, reason);
+      logger.error('Livraison échouée', { orderId: order.id, productId: produit.id, reason });
       throw error;
     }
 
-    orders.markDelivered(order.id);
+    orders.markDelivered(order.id, { provider: email.name });
     // L'adresse de l'acheteur reste hors du log : l'orderId suffit à
     // retrouver la commande en base, et son payment_id dans PayPlug.
     logger.info('Email envoyé', {

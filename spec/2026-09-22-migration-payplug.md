@@ -99,6 +99,60 @@ notifications PayPlug n'ont pas d'identifiant d'événement.
 | `paid_at`        | TEXT        | Nullable                                              |
 | `delivered_at`   | TEXT        | Nullable                                              |
 
+### `order_events` — journal d'audit
+
+`orders` ne garde que l'**état courant** : un échec d'envoi suivi d'un renvoi
+réussi n'y laisse que `delivered`. L'historique complet vit dans
+`order_events`, une ligne par étape, jamais modifiée ni supprimée.
+
+| Colonne      | Type       | Rôle                                                   |
+| ------------ | ---------- | ------------------------------------------------------ |
+| `id`         | INTEGER PK | Auto-incrément : l'ordre d'insertion fait foi          |
+| `order_id`   | TEXT       | Nullable — une notification peut viser un inconnu      |
+| `payment_id` | TEXT       | Nullable — avant la création du paiement               |
+| `type`       | TEXT       | Voir ci-dessous                                        |
+| `detail`     | TEXT       | JSON : raison, montants, code d'échec…                 |
+| `created_at` | TEXT       | ISO 8601                                               |
+
+| Étape                    | Types tracés                                                       |
+| ------------------------ | ------------------------------------------------------------------ |
+| Checkout                 | `order_created`, `payment_created`, `payment_creation_failed`      |
+| Notification             | `notification_received` (champs affirmés), `notification_rejected`, `verification_failed`, `payment_not_paid` (+ code d'échec PayPlug), `payment_mismatch` |
+| Idempotence              | `payment_confirmed`, `payment_already_processed`                   |
+| Livraison                | `email_sent`, `delivery_failed` (+ raison)                         |
+| Téléchargement           | `download_served` (+ compteur), `download_refused` (+ raison)      |
+
+Garanties :
+
+- **Ajout seul, imposé par la base** : deux triggers SQLite rejettent tout
+  `UPDATE` ou `DELETE` sur `order_events`.
+- **Même transaction** que le changement d'état qu'il décrit : pas d'état sans
+  trace, ni de trace d'un changement qui n'a pas eu lieu.
+- **Pas de donnée personnelle dupliquée** : l'email reste dans `orders`, une
+  seule fois. Aucune adresse IP n'est enregistrée.
+- Non tracé en base : les notifications à l'identifiant mal formé et les
+  tokens de téléchargement invalides. Ils ne se rattachent à aucune commande
+  et pourraient remplir la base à volonté ; ils restent dans les logs.
+
+Historique d'une commande :
+
+```sql
+SELECT created_at, type, payment_id, detail FROM order_events
+WHERE order_id = 'ord_…'
+   OR payment_id = (SELECT payment_id FROM orders WHERE id = 'ord_…')
+ORDER BY id;
+```
+
+### Durée de conservation
+
+`orders` et `order_events` sont conservées **10 ans**, la durée fixée pour les
+pièces justificatives comptables (article L123-22 du Code de commerce), et la
+plus longue qui puisse s'appliquer ici. Aucune purge n'est automatisée : la
+première échéance tombe en 2036. Une purge devra supprimer explicitement les
+triggers d'ajout seul, ce qui la rend délibérée par construction. La durée est
+à mentionner dans la politique de confidentialité, puisque l'email de
+l'acheteur est conservé aussi longtemps.
+
 Une base créée par la version Stripe (colonne `checkout_session_id`) fait
 échouer le démarrage avec un message explicite : l'archiver, puis supprimer
 `orders.db`.

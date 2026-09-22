@@ -86,11 +86,9 @@ export async function checkoutRoutes(
     } catch (error) {
       // La commande reste en `pending` sans paiement : inoffensive, et utile
       // pour mesurer les échecs de création.
-      logger.error('Création du paiement impossible', {
-        orderId,
-        productId: produit.id,
-        reason: error instanceof Error ? error.message : String(error),
-      });
+      const reason = error instanceof Error ? error.message : String(error);
+      orders.recordEvent({ type: 'payment_creation_failed', orderId, detail: { reason } });
+      logger.error('Création du paiement impossible', { orderId, productId: produit.id, reason });
       return reply.code(502).send({ error: 'Paiement indisponible, réessayez.' });
     }
   });

@@ -57,6 +57,20 @@ export async function notificationRoutes(
       });
     }
 
+    // Rattachement provisoire, pour que l'historique de la commande montre
+    // aussi les notifications refusées. Le corps n'y gagne aucune confiance :
+    // seule la relecture ci-dessous décide de livrer.
+    const orderIdConnu = orders.findByPaymentId(paymentId)?.id;
+    const tracer = (
+      type: Parameters<OrdersRepository['recordEvent']>[0]['type'],
+      detail?: Record<string, unknown>,
+      orderId = orderIdConnu,
+    ): void => orders.recordEvent({ type, orderId, paymentId, detail });
+
+    // Ce que PayPlug (ou un imposteur) a affirmé, archivé champ par champ :
+    // stocker le corps entier laisserait n'importe qui remplir la base avec
+    // des notifications forgées de plusieurs centaines de Ko.
+    tracer('notification_received', { claimed: { id: body.id, object: body.object, is_live: body.is_live } });
     logger.info('Notification reçue', { paymentId });
 
     let paiement: PayPlugPayment;
@@ -66,6 +80,7 @@ export async function notificationRoutes(
       if (error instanceof PayPlugError && error.status === 404) {
         // Inconnu de PayPlug pour NOTRE clé : notification forgée, ou émise
         // dans l'autre mode (test/live). Rien à livrer dans les deux cas.
+        tracer('notification_rejected', { reason: 'payment_not_found' });
         logger.warn('Notification pour un paiement introuvable chez PayPlug', { paymentId });
         return reply.code(400).send({ error: 'Paiement inconnu.' });
       }
@@ -73,16 +88,18 @@ export async function notificationRoutes(
       // PayPlug injoignable, ou clé refusée (401) : on ne sait pas si le
       // paiement est réussi. Répondre en erreur laisse PayPlug renvoyer la
       // notification ; le log permet sinon un rattrapage manuel.
-      logger.error('Vérification du paiement impossible', {
-        paymentId,
+      const echec = {
         status: error instanceof PayPlugError ? error.status : undefined,
         reason: error instanceof Error ? error.message : String(error),
-      });
+      };
+      tracer('verification_failed', echec);
+      logger.error('Vérification du paiement impossible', { paymentId, ...echec });
       return reply.code(502).send({ error: 'Vérification impossible.' });
     }
 
     // À partir d'ici, seul `paiement` — relu chez PayPlug — fait foi.
     if (!paiement.is_paid) {
+      tracer('payment_not_paid', { failure: paiement.failure });
       logger.info('Paiement non abouti, aucune livraison', {
         paymentId,
         failure: paiement.failure?.code,
@@ -96,11 +113,17 @@ export async function notificationRoutes(
     if (!orderId || !commande) {
       // Payé mais sans commande correspondante : base restaurée, ou paiement
       // créé hors du tunnel. L'argent est encaissé, il faut regarder à la main.
+      tracer('payment_mismatch', { reason: 'order_not_found', metadataOrderId: orderId });
       logger.error('Paiement confirmé sans commande correspondante', { paymentId, orderId });
       return reply.send({ received: true });
     }
 
     if (commande.paymentId !== paiement.id) {
+      tracer(
+        'payment_mismatch',
+        { reason: 'payment_not_attached', expectedPaymentId: commande.paymentId },
+        orderId,
+      );
       logger.error('Paiement non rattaché à cette commande, aucune livraison', {
         paymentId,
         orderId,
@@ -110,6 +133,15 @@ export async function notificationRoutes(
     }
 
     if (paiement.amount !== commande.amountTotal || paiement.currency !== commande.currency) {
+      tracer(
+        'payment_mismatch',
+        {
+          reason: 'amount_mismatch',
+          paid: { amount: paiement.amount, currency: paiement.currency },
+          expected: { amount: commande.amountTotal, currency: commande.currency },
+        },
+        orderId,
+      );
       logger.error('Montant payé différent de la commande, aucune livraison', {
         paymentId,
         orderId,
@@ -121,6 +153,7 @@ export async function notificationRoutes(
 
     // Verrou d'idempotence : seule la notification qui fait passer la commande
     // de `pending` à `paid` livre. Les rejeux — même simultanés — s'arrêtent ici.
+    // markPaid trace lui-même les deux issues (confirmé / déjà traité).
     if (!orders.markPaid(orderId, paiement.id)) {
       logger.info('Paiement déjà traité, aucune seconde livraison', {
         paymentId,
