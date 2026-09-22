@@ -22,6 +22,8 @@ service doit pouvoir être déployé, cassé et redéployé sans toucher au rest
   base de données. PayPlug reste la source de vérité des paiements ; la base
   trace les commandes, garantit l'idempotence et suit les livraisons
 - **Brevo** pour l'email transactionnel, appelé en `fetch` direct (pas de SDK)
+- **Litestream**, sauvegarde continue de la base SQLite vers l'Object Storage
+  OVH : chaque écriture part dans le bucket en une seconde environ
 - **CapRover**, une seule app servant l'API et les pages statiques
 
 ## Démarrage local
@@ -54,6 +56,11 @@ Toutes sont documentées dans [`.env.example`](.env.example). Les obligatoires :
 | `DOWNLOAD_TOKEN_SECRET` | Secret HMAC des liens de téléchargement               |
 | `PUBLIC_BASE_URL`       | URL publique, sert à bâtir les liens envoyés par mail |
 
+En production (container), quatre variables de plus configurent la sauvegarde :
+`LITESTREAM_BUCKET`, `LITESTREAM_REGION`, `LITESTREAM_ACCESS_KEY_ID`,
+`LITESTREAM_SECRET_ACCESS_KEY`. Le container refuse de démarrer si l'une manque
+ou si le bucket est injoignable.
+
 `DATA_DIR` est optionnelle (`./data` par défaut en local, `/data` fixée par le
 Dockerfile en production).
 
@@ -72,8 +79,15 @@ premier paiement.
 └── ebooks/          les PDF vendus, déposés manuellement
 ```
 
-En production, c'est un **volume persistant CapRover** monté sur `/data`. Sans
-volume, l'historique des commandes disparaît à chaque redéploiement et la
+En production, c'est un **volume persistant CapRover** monté sur `/data`, et
+`orders.db` est répliquée en continu dans un bucket OVH par Litestream. Si le
+volume est perdu, le container restaure la base depuis le bucket au démarrage
+suivant. Mise en place, rétention et test de restauration :
+[`spec/2026-09-22-sauvegarde-litestream.md`](spec/2026-09-22-sauvegarde-litestream.md).
+Les PDF, eux, ne sont pas sauvegardés par ce biais : leurs originaux sont
+conservés hors du serveur.
+
+Sans volume, l'historique des commandes disparaît à chaque redéploiement et la
 garantie de non-double-livraison tombe avec lui. Les PDF y vivant aussi, en
 remplacer un ne demande pas de reconstruire l'image.
 

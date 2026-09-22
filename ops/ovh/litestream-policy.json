@@ -1,0 +1,21 @@
+{
+  "Statement": [
+    {
+      "Sid": "LitestreamLectureEcritureSansSuppression",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:ListBucket",
+        "s3:GetBucketLocation",
+        "s3:ListBucketMultipartUploads",
+        "s3:ListMultipartUploadParts",
+        "s3:AbortMultipartUpload"
+      ],
+      "Resource": [
+        "arn:aws:s3:::grindrise-orders-backup",
+        "arn:aws:s3:::grindrise-orders-backup/*"
+      ]
+    }
+  ]
+}

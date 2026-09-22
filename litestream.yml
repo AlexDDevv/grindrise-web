@@ -1,0 +1,34 @@
+# Réplication continue de la base des commandes vers l'Object Storage OVH.
+#
+# Chaque écriture SQLite part dans le bucket en environ une seconde : un disque
+# perdu ne coûte au pire que la dernière seconde, pas une journée de commandes.
+# Les ${VARIABLES} sont lues dans l'environnement du container (CapRover) ;
+# docker-entrypoint.sh refuse de démarrer si l'une d'elles manque.
+
+logging:
+  # Même format que le serveur : une ligne JSON par événement dans les logs
+  # CapRover.
+  type: json
+
+# Un snapshot complet par jour. Ce sont eux qui sont conservés 10 ans (voir la
+# règle de cycle de vie du bucket dans spec/2026-09-22-migration-payplug.md).
+snapshot:
+  interval: 24h
+
+# Litestream ne supprime jamais rien dans le bucket : l'expiration est confiée
+# aux règles de cycle de vie OVH. La clé d'accès du serveur peut ainsi être
+# privée du droit de suppression — un serveur compromis ne peut pas effacer
+# l'historique des sauvegardes.
+retention:
+  enabled: false
+
+dbs:
+  - path: ${DATA_DIR}/orders.db
+    replica:
+      type: s3
+      bucket: ${LITESTREAM_BUCKET}
+      path: orders
+      endpoint: https://s3.${LITESTREAM_REGION}.io.cloud.ovh.net
+      region: ${LITESTREAM_REGION}
+      access-key-id: ${LITESTREAM_ACCESS_KEY_ID}
+      secret-access-key: ${LITESTREAM_SECRET_ACCESS_KEY}

@@ -1,0 +1,45 @@
+{
+  "Rules": [
+    {
+      "ID": "journal-fin-L0-30-jours",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "orders/ltx/0/" },
+      "Expiration": { "Days": 30 },
+      "NoncurrentVersionExpiration": { "NoncurrentDays": 1 }
+    },
+    {
+      "ID": "journal-fin-L1-30-jours",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "orders/ltx/1/" },
+      "Expiration": { "Days": 30 },
+      "NoncurrentVersionExpiration": { "NoncurrentDays": 1 }
+    },
+    {
+      "ID": "journal-fin-L2-30-jours",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "orders/ltx/2/" },
+      "Expiration": { "Days": 30 },
+      "NoncurrentVersionExpiration": { "NoncurrentDays": 1 }
+    },
+    {
+      "ID": "journal-fin-L3-30-jours",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "orders/ltx/3/" },
+      "Expiration": { "Days": 30 },
+      "NoncurrentVersionExpiration": { "NoncurrentDays": 1 }
+    },
+    {
+      "ID": "snapshots-quotidiens-10-ans",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "orders/ltx/9/" },
+      "Expiration": { "Days": 3653 },
+      "NoncurrentVersionExpiration": { "NoncurrentDays": 1 }
+    },
+    {
+      "ID": "envois-incomplets",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "" },
+      "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 7 }
+    }
+  ]
+}
