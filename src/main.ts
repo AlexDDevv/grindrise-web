@@ -1,10 +1,10 @@
-import { createStripeClient } from './checkout/stripe.client';
 import { validateEnv } from './config/env.config';
 import { openDatabase } from './db/database';
 import { OrdersRepository } from './db/orders.repository';
 import { DeliveryService } from './delivery/delivery.service';
 import { BrevoEmailProvider } from './email/brevo.provider';
 import { logger } from './logger';
+import { PayPlugClient } from './payment/payplug.client';
 import { buildServer } from './server';
 
 async function main(): Promise<void> {
@@ -20,15 +20,21 @@ async function main(): Promise<void> {
     replyTo: config.brevoReplyTo,
   });
   const delivery = new DeliveryService({ orders, email, config });
-  const stripe = createStripeClient(config.stripeSecretKey);
+  const payplug = new PayPlugClient(config.payplugSecretKey);
 
-  const app = await buildServer({ config, db, orders, email, stripe, delivery });
+  const app = await buildServer({ config, db, orders, email, payplug, delivery });
 
   await app.listen({ port: config.port, host: '0.0.0.0' });
-  logger.info('Serveur à l\'écoute', { port: config.port, baseUrl: config.publicBaseUrl });
+  // Le mode figure dans chaque démarrage : c'est la première chose à lire
+  // quand un paiement réel n'arrive pas, ou qu'un paiement de test livre en prod.
+  logger.info('Serveur à l\'écoute', {
+    port: config.port,
+    baseUrl: config.publicBaseUrl,
+    payplugMode: config.payplugMode,
+  });
 
   // Sans arrêt propre, un redéploiement CapRover coupe une requête en cours —
-  // potentiellement un webhook entre l'enregistrement de la commande et l'envoi
+  // potentiellement une notification entre l'enregistrement de la commande et l'envoi
   // de l'email, qui laisserait un acheteur payé sans son fichier.
   const shutdown = (signal: string): void => {
     logger.info('Arrêt demandé', { signal });

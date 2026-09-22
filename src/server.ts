@@ -3,7 +3,6 @@ import type { DatabaseSync } from 'node:sqlite';
 
 import fastifyStatic from '@fastify/static';
 import Fastify, { type FastifyInstance } from 'fastify';
-import type Stripe from 'stripe';
 
 import { checkoutRoutes } from './checkout/checkout.routes';
 import type { AppConfig } from './config/env.config';
@@ -11,14 +10,15 @@ import type { OrdersRepository } from './db/orders.repository';
 import type { DeliveryService } from './delivery/delivery.service';
 import { DOWNLOAD_MAX_PARAM_LENGTH, downloadRoutes } from './download/download.routes';
 import type { EmailProvider } from './email/email-provider';
-import { webhookRoutes } from './webhook/webhook.routes';
+import { notificationRoutes } from './notification/notification.routes';
+import type { PayPlugClient } from './payment/payplug.client';
 
 export type ServerDeps = {
   config: AppConfig;
   db: DatabaseSync;
   orders: OrdersRepository;
   email: EmailProvider;
-  stripe: Stripe;
+  payplug: PayPlugClient;
   delivery: DeliveryService;
 };
 
@@ -58,10 +58,14 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
   app.get('/success', async (_request, reply) => reply.sendFile('success.html'));
   app.get('/cancel', async (_request, reply) => reply.sendFile('cancel.html'));
 
-  await app.register(checkoutRoutes, { config: deps.config, stripe: deps.stripe });
-  await app.register(webhookRoutes, {
+  await app.register(checkoutRoutes, {
     config: deps.config,
-    stripe: deps.stripe,
+    payplug: deps.payplug,
+    orders: deps.orders,
+  });
+  await app.register(notificationRoutes, {
+    config: deps.config,
+    payplug: deps.payplug,
     orders: deps.orders,
     delivery: deps.delivery,
   });

@@ -2,6 +2,11 @@
 
 Date : 2026-09-17
 
+> **Paiement remplacé par PayPlug le 2026-09-22.** Pour tout ce qui concerne le
+> paiement (flow, modèle de données, idempotence, routes, procédure de test),
+> [`2026-09-22-migration-payplug.md`](2026-09-22-migration-payplug.md) fait foi.
+> Ce document reste la référence pour le reste du tunnel.
+
 Périmètre : la mécanique technique du funnel, de l'appui sur le bouton d'achat
 jusqu'au téléchargement du PDF. Hors périmètre : le design réel, le contenu des
 ebooks, la landing page Grindrise, toute notion de compte utilisateur.

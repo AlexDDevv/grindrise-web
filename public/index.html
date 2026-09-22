@@ -12,16 +12,25 @@
     <p>Le programme complet pour structurer sa progression.</p>
     <p><strong>19,90 €</strong></p>
 
-    <button id="acheter" type="button">Acheter</button>
+    <!-- La page de paiement PayPlug ne demande pas l'email : c'est ici qu'on le
+         collecte, et c'est là que partira le lien de téléchargement. -->
+    <form id="achat">
+      <label for="email">Email de réception de l'ebook</label>
+      <input id="email" name="email" type="email" autocomplete="email" required maxlength="255" />
+      <button id="acheter" type="submit">Acheter</button>
+    </form>
     <p id="erreur" role="alert" hidden></p>
 
     <script>
+      const formulaire = document.getElementById('achat');
       const bouton = document.getElementById('acheter');
+      const champEmail = document.getElementById('email');
       const erreur = document.getElementById('erreur');
 
-      bouton.addEventListener('click', async () => {
-        // Désactiver pendant l'appel : un double clic créerait deux sessions
-        // Stripe, donc deux pages de paiement pour un seul acheteur.
+      formulaire.addEventListener('submit', async (evenement) => {
+        evenement.preventDefault();
+        // Désactiver pendant l'appel : un double clic créerait deux paiements
+        // PayPlug, donc deux commandes pour un seul acheteur.
         bouton.disabled = true;
         erreur.hidden = true;
 
@@ -29,7 +38,7 @@
           const reponse = await fetch('/api/checkout', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ productId: 'entrainement' }),
+            body: JSON.stringify({ productId: 'entrainement', email: champEmail.value }),
           });
 
           if (!reponse.ok) throw new Error('Paiement indisponible');

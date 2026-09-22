@@ -14,10 +14,9 @@ export type BrevoSender = {
 
 const ENDPOINT = 'https://api.brevo.com/v3/smtp/email';
 
-/** Undici attend 300 s par défaut sans timeout explicite : la requête webhook
- * qui déclenche l'envoi resterait ouverte cinq minutes. Stripe considère un
- * endpoint en échec au-delà de 20 s et rejoue l'événement — un envoi lent
- * produirait donc des tentatives de livraison en double. */
+/** Undici attend 300 s par défaut sans timeout explicite : la notification
+ * PayPlug qui déclenche l'envoi resterait ouverte cinq minutes, et un appelant
+ * qui abandonne avant la réponse renvoie la notification. */
 const REQUEST_TIMEOUT_MS = 10_000;
 
 /** Tronque le corps avant de le journaliser en debug : diagnostic, pas archive. */

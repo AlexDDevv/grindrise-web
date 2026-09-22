@@ -13,9 +13,10 @@ export type Product = {
   id: string;
   name: string;
   description: string;
-  /** En centimes : Stripe raisonne en plus petite unité monétaire. */
+  /** En centimes : PayPlug raisonne en plus petite unité monétaire. */
   priceCents: number;
-  currency: string;
+  /** PayPlug n'encaisse qu'en euros. */
+  currency: 'EUR';
   fileName: string;
 };
 
@@ -25,7 +26,7 @@ export const CATALOG: readonly Product[] = [
     name: "Guide d'entraînement Grindrise",
     description: 'Le programme complet pour structurer sa progression.',
     priceCents: 1990,
-    currency: 'eur',
+    currency: 'EUR',
     fileName: 'entrainement.pdf',
   },
 ];

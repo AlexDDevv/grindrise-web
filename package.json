@@ -2,7 +2,7 @@
   "name": "grindrise-web",
   "version": "0.1.0",
   "private": true,
-  "description": "Tunnel de vente d'ebooks : Stripe Checkout, livraison par lien de téléchargement signé, emails Brevo.",
+  "description": "Tunnel de vente d'ebooks : paiement PayPlug, livraison par lien de téléchargement signé, emails Brevo.",
   "packageManager": "pnpm@11.9.0",
   "engines": {
     "node": ">=24"
@@ -16,8 +16,7 @@
   },
   "dependencies": {
     "@fastify/static": "^10.1.3",
-    "fastify": "^5.12.4",
-    "stripe": "^22.6.2"
+    "fastify": "^5.12.4"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",

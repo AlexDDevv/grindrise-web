@@ -13,7 +13,7 @@ describe('catalogue', () => {
 
   it('renvoie undefined pour un identifiant inconnu', () => {
     // Un id inconnu vient d'un client qui invente sa requête : il doit être
-    // refusé côté route, pas produire une session Stripe fantôme.
+    // refusé côté route, pas produire un paiement PayPlug fantôme.
     expect(findProduct('nexiste-pas')).toBeUndefined();
   });
 

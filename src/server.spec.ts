@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 
 import type { AppConfig } from './config/env.config';
@@ -12,8 +13,8 @@ const config: AppConfig = {
   port: 0,
   publicBaseUrl: 'http://localhost:3000',
   dataDir: './data',
-  stripeSecretKey: 'sk_test_123',
-  stripeWebhookSecret: 'whsec_123',
+  payplugSecretKey: 'sk_test_123',
+  payplugMode: 'test',
   brevoApiKey: 'xkeysib-123',
   brevoSenderEmail: 'contact@example.com',
   brevoSenderName: 'Grindrise',
@@ -33,7 +34,7 @@ function deps(): ServerDeps {
     db,
     orders,
     email,
-    stripe: {} as never,
+    payplug: {} as never,
     delivery: new DeliveryService({ orders, email, config }),
   };
 }
@@ -74,13 +75,13 @@ describe('buildServer', () => {
 
   it('accepte un token de téléchargement de longueur réaliste', async () => {
     // Fastify plafonne les paramètres d'URL à 100 caractères et répond 414
-    // au-delà. Un token signé sur un vrai identifiant de session Stripe en fait
-    // près du double : sans maxParamLength relevé, aucun lien de livraison ne
+    // au-delà. Un token signé sur un vrai identifiant de commande dépasse ce
+    // plafond : sans maxParamLength relevé, aucun lien de livraison ne
     // fonctionne en production. Les tests de download/ montent leur propre
     // instance Fastify, ce test verrouille la configuration réelle.
     const app = await buildServer(deps());
-    const sessionStripe = `cs_test_${'a1b2c3d4e5'.repeat(6)}`;
-    const token = signDownloadToken(sessionStripe, config.downloadTokenSecret, 7);
+    const commande = `ord_${randomUUID()}`;
+    const token = signDownloadToken(commande, config.downloadTokenSecret, 7);
 
     const reponse = await app.inject({ method: 'GET', url: `/api/download/${token}` });
 

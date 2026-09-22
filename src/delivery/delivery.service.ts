@@ -9,8 +9,8 @@ import { signDownloadToken } from '../tokens/download-token';
 /**
  * Livraison d'une commande payée.
  *
- * Séparé de la route webhook pour rester testable sans simuler une requête
- * HTTP signée, et pour qu'un futur renvoi manuel puisse réutiliser exactement
+ * Séparé de la route de notification pour rester testable sans simuler
+ * PayPlug, et pour qu'un futur renvoi manuel puisse réutiliser exactement
  * le même chemin.
  */
 export class DeliveryService {
@@ -29,14 +29,14 @@ export class DeliveryService {
     if (!produit) {
       // Un produit retiré du catalogue alors qu'une commande le référence : le
       // signaler bruyamment plutôt qu'envoyer un email sans lien exploitable.
-      orders.markDeliveryFailed(order.checkoutSessionId);
+      orders.markDeliveryFailed(order.id);
       throw new Error(
-        `Produit ${order.productId} absent du catalogue, commande ${order.checkoutSessionId} non livrée.`,
+        `Produit ${order.productId} absent du catalogue, commande ${order.id} non livrée.`,
       );
     }
 
     const token = signDownloadToken(
-      order.checkoutSessionId,
+      order.id,
       config.downloadTokenSecret,
       config.downloadTokenTtlDays,
     );
@@ -49,20 +49,20 @@ export class DeliveryService {
     try {
       await email.send({ to: { email: order.email }, ...message });
     } catch (error) {
-      orders.markDeliveryFailed(order.checkoutSessionId);
+      orders.markDeliveryFailed(order.id);
       logger.error('Livraison échouée', {
-        sessionId: order.checkoutSessionId,
+        orderId: order.id,
         productId: produit.id,
         reason: error instanceof Error ? error.message : String(error),
       });
       throw error;
     }
 
-    orders.markDelivered(order.checkoutSessionId);
-    // L'adresse de l'acheteur reste hors du log : le sessionId suffit à
-    // retrouver la commande dans Stripe comme en base.
+    orders.markDelivered(order.id);
+    // L'adresse de l'acheteur reste hors du log : l'orderId suffit à
+    // retrouver la commande en base, et son payment_id dans PayPlug.
     logger.info('Email envoyé', {
-      sessionId: order.checkoutSessionId,
+      orderId: order.id,
       productId: produit.id,
       provider: email.name,
     });

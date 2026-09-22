@@ -1,6 +1,6 @@
 # grindrise-web
 
-Tunnel de vente d'ebooks : Stripe Checkout en entrée, livraison automatique par
+Tunnel de vente d'ebooks : page de paiement PayPlug en entrée, livraison automatique par
 email avec lien de téléchargement signé en sortie.
 
 Projet **indépendant** du monorepo GrindRise et de `grindrise-notifications`.
@@ -14,11 +14,13 @@ service doit pouvoir être déployé, cassé et redéployé sans toucher au rest
 
 - **Fastify** + TypeScript, compilé en CommonJS (mêmes conventions que
   `grindrise-notifications`)
-- **Stripe Checkout** en mode paiement unique — aucun compte utilisateur, aucune
-  auth : Stripe collecte l'email de l'acheteur
+- **PayPlug**, page de paiement hébergée, appelé en `fetch` direct (aucun SDK
+  Node officiel) — aucun compte utilisateur : notre page collecte l'email de
+  l'acheteur. Les notifications IPN n'étant pas signées, chaque paiement est
+  relu auprès de l'API PayPlug avant toute livraison
 - **SQLite** via `node:sqlite`, le module natif de Node 24 — zéro dépendance
-  base de données. Stripe reste la source de vérité des paiements ; la base ne
-  sert qu'à garantir l'idempotence et tracer les livraisons
+  base de données. PayPlug reste la source de vérité des paiements ; la base
+  trace les commandes, garantit l'idempotence et suit les livraisons
 - **Brevo** pour l'email transactionnel, appelé en `fetch` direct (pas de SDK)
 - **CapRover**, une seule app servant l'API et les pages statiques
 
@@ -46,8 +48,7 @@ Toutes sont documentées dans [`.env.example`](.env.example). Les obligatoires :
 
 | Variable                | Rôle                                                  |
 | ----------------------- | ----------------------------------------------------- |
-| `STRIPE_SECRET_KEY`     | Clé API Stripe (`sk_test_…` puis `sk_live_…`)         |
-| `STRIPE_WEBHOOK_SECRET` | Authentifie les appels du webhook — diffère en local  |
+| `PAYPLUG_SECRET_KEY`    | Clé secrète PayPlug (`sk_test_…` puis `sk_live_…`)    |
 | `BREVO_API_KEY`         | Clé API Brevo                                         |
 | `BREVO_SENDER_EMAIL`    | Expéditeur validé côté Brevo                          |
 | `DOWNLOAD_TOKEN_SECRET` | Secret HMAC des liens de téléchargement               |
@@ -66,7 +67,7 @@ premier paiement.
 
 ```
 /data
-├── orders.db        base SQLite (commandes, événements traités)
+├── orders.db        base SQLite (commandes et leur paiement PayPlug)
 └── ebooks/          les PDF vendus, déposés manuellement
 ```
 
@@ -77,7 +78,9 @@ remplacer un ne demande pas de reconstruire l'image.
 
 ## Conception
 
-Le détail du flow, le schéma des tables, la stratégie d'idempotence et la
-procédure de test avec les clés Stripe de test sont dans
-[`spec/`](spec/). Les notes de travail produit vivent dans `docs/`, qui n'est
+La conception initiale est dans [`spec/`](spec/) ; le passage à PayPlug —
+flow, vérification des notifications, idempotence, procédure de test et bascule
+en live — est décrit dans
+[`spec/2026-09-22-migration-payplug.md`](spec/2026-09-22-migration-payplug.md),
+qui prime sur la conception initiale pour tout ce qui touche au paiement. Les notes de travail produit vivent dans `docs/`, qui n'est
 pas versionné.

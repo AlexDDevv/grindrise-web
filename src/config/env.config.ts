@@ -1,3 +1,5 @@
+import { payplugModeOf, type PayPlugMode } from '../payment/payplug.client';
+
 /**
  * Validation de l'environnement au démarrage.
  *
@@ -10,8 +12,9 @@ export type AppConfig = {
   port: number;
   publicBaseUrl: string;
   dataDir: string;
-  stripeSecretKey: string;
-  stripeWebhookSecret: string;
+  payplugSecretKey: string;
+  /** Déduit du préfixe de la clé : PayPlug n'a pas d'endpoint de test séparé. */
+  payplugMode: PayPlugMode;
   brevoApiKey: string;
   brevoSenderEmail: string;
   brevoSenderName: string;
@@ -38,8 +41,9 @@ export function validateEnv(raw: Record<string, unknown>): AppConfig {
     return typeof value === 'string' && value.trim() !== '' ? value.trim() : fallback;
   };
 
-  const stripeSecretKey = required('STRIPE_SECRET_KEY');
-  const stripeWebhookSecret = required('STRIPE_WEBHOOK_SECRET');
+  // Aucune valeur par défaut, même en développement : une clé factice ferait
+  // démarrer le serveur et reporterait l'échec au premier achat, en 401.
+  const payplugSecretKey = required('PAYPLUG_SECRET_KEY');
   const brevoApiKey = required('BREVO_API_KEY');
   const brevoSenderEmail = required('BREVO_SENDER_EMAIL');
   const downloadTokenSecret = required('DOWNLOAD_TOKEN_SECRET');
@@ -48,6 +52,25 @@ export function validateEnv(raw: Record<string, unknown>): AppConfig {
   if (missing.length > 0) {
     throw new Error(
       `Variables d'environnement manquantes : ${missing.join(', ')}. Voir .env.example.`,
+    );
+  }
+
+  const payplugMode = payplugModeOf(payplugSecretKey);
+  if (!payplugMode) {
+    // La clé publique (pk_…) se trouve à côté de la secrète dans le dashboard :
+    // c'est la confusion la plus probable, autant la nommer.
+    throw new Error(
+      'PAYPLUG_SECRET_KEY invalide : clé secrète sk_test_… ou sk_live_… attendue (pas la clé publique pk_…).',
+    );
+  }
+
+  // Une clé live avec une URL publique en http, c'est une configuration locale
+  // passée en production par erreur : les liens de livraison partiraient vers
+  // localhost dans les emails de vrais acheteurs, et PayPlug ne pourrait pas
+  // joindre la notification_url.
+  if (payplugMode === 'live' && !publicBaseUrl.startsWith('https://')) {
+    throw new Error(
+      `Clé PayPlug live avec PUBLIC_BASE_URL non https (${publicBaseUrl}) : mélange probable test/production.`,
     );
   }
 
@@ -69,8 +92,8 @@ export function validateEnv(raw: Record<string, unknown>): AppConfig {
     // partis — irrattrapable une fois envoyés.
     publicBaseUrl: publicBaseUrl.replace(/\/+$/, ''),
     dataDir: optional('DATA_DIR', './data'),
-    stripeSecretKey,
-    stripeWebhookSecret,
+    payplugSecretKey,
+    payplugMode,
     brevoApiKey,
     brevoSenderEmail,
     brevoSenderName: optional('BREVO_SENDER_NAME', 'Grindrise'),

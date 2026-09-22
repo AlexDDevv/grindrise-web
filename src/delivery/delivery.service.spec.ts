@@ -21,13 +21,15 @@ function contexte() {
   const send = jest.fn(async (_message: unknown) => undefined);
   const email: EmailProvider = { name: 'fake', send };
 
-  orders.insertPaidOrder({
-    checkoutSessionId: 'cs_test_1',
+  orders.createPending({
+    id: 'ord_1',
     productId: CATALOG[0].id,
     email: 'acheteur@example.com',
     amountTotal: CATALOG[0].priceCents,
     currency: CATALOG[0].currency,
   });
+  orders.attachPayment('ord_1', 'pay_1');
+  orders.markPaid('ord_1', 'pay_1');
 
   return { db, orders, send, service: new DeliveryService({ orders, email, config }) };
 }
@@ -36,7 +38,7 @@ describe('DeliveryService', () => {
   it('envoie un email contenant un lien vérifiable vers la commande', async () => {
     const { orders, send, service, db } = contexte();
 
-    await service.deliver(orders.findById('cs_test_1')!);
+    await service.deliver(orders.findById('ord_1')!);
 
     expect(send).toHaveBeenCalledTimes(1);
     const message = send.mock.calls[0][0] as { to: { email: string }; text: string };
@@ -44,16 +46,16 @@ describe('DeliveryService', () => {
 
     const lien = message.text.match(/https:\/\/\S+/)![0];
     const token = lien.split('/').pop()!;
-    expect(verifyDownloadToken(token, config.downloadTokenSecret)).toBe('cs_test_1');
+    expect(verifyDownloadToken(token, config.downloadTokenSecret)).toBe('ord_1');
     db.close();
   });
 
   it('marque la commande livrée après un envoi réussi', async () => {
     const { orders, service, db } = contexte();
 
-    await service.deliver(orders.findById('cs_test_1')!);
+    await service.deliver(orders.findById('ord_1')!);
 
-    expect(orders.findById('cs_test_1')?.status).toBe('delivered');
+    expect(orders.findById('ord_1')?.status).toBe('delivered');
     db.close();
   });
 
@@ -72,14 +74,14 @@ describe('DeliveryService', () => {
       config,
     });
 
-    await expect(casse.deliver(orders.findById('cs_test_1')!)).rejects.toThrow('Brevo HS');
-    expect(orders.findById('cs_test_1')?.status).toBe('delivery_failed');
+    await expect(casse.deliver(orders.findById('ord_1')!)).rejects.toThrow('Brevo HS');
+    expect(orders.findById('ord_1')?.status).toBe('delivery_failed');
     db.close();
   });
 
   it('refuse de livrer une commande dont le produit a disparu du catalogue', async () => {
     const { orders, send, service, db } = contexte();
-    const orpheline = { ...orders.findById('cs_test_1')!, productId: 'supprime-du-catalogue' };
+    const orpheline = { ...orders.findById('ord_1')!, productId: 'supprime-du-catalogue' };
 
     await expect(service.deliver(orpheline)).rejects.toThrow(/catalogue/i);
     expect(send).not.toHaveBeenCalled();

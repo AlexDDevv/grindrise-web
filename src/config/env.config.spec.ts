@@ -1,8 +1,7 @@
 import { validateEnv } from './env.config';
 
 const complet = {
-  STRIPE_SECRET_KEY: 'sk_test_123',
-  STRIPE_WEBHOOK_SECRET: 'whsec_123',
+  PAYPLUG_SECRET_KEY: 'sk_test_123',
   BREVO_API_KEY: 'xkeysib-123',
   BREVO_SENDER_EMAIL: 'contact@example.com',
   DOWNLOAD_TOKEN_SECRET: 'un-secret-de-test',
@@ -13,7 +12,8 @@ describe('validateEnv', () => {
   it('accepte un environnement complet et applique les valeurs par défaut', () => {
     const config = validateEnv(complet);
 
-    expect(config.stripeSecretKey).toBe('sk_test_123');
+    expect(config.payplugSecretKey).toBe('sk_test_123');
+    expect(config.payplugMode).toBe('test');
     expect(config.port).toBe(3000);
     expect(config.dataDir).toBe('./data');
     expect(config.brevoSenderName).toBe('Grindrise');
@@ -25,7 +25,31 @@ describe('validateEnv', () => {
   it('liste toutes les variables manquantes en une fois', () => {
     // Une erreur par variable obligerait à relancer le container autant de fois
     // qu'il manque de clés : la liste complète en un message évite ce ping-pong.
-    expect(() => validateEnv({})).toThrow(/STRIPE_SECRET_KEY.*BREVO_API_KEY/s);
+    expect(() => validateEnv({})).toThrow(/PAYPLUG_SECRET_KEY.*BREVO_API_KEY/s);
+  });
+
+  it('refuse une clé PayPlug qui n’est pas une clé secrète', () => {
+    expect(() => validateEnv({ ...complet, PAYPLUG_SECRET_KEY: 'pk_test_123' })).toThrow(
+      /PAYPLUG_SECRET_KEY invalide/,
+    );
+  });
+
+  it('déduit le mode live du préfixe de la clé', () => {
+    const config = validateEnv({
+      ...complet,
+      PAYPLUG_SECRET_KEY: 'sk_live_123',
+      PUBLIC_BASE_URL: 'https://exemple.fr',
+    });
+
+    expect(config.payplugMode).toBe('live');
+  });
+
+  it('refuse une clé live avec une URL publique non https', () => {
+    // Configuration de développement déployée avec la clé de production : les
+    // liens de livraison pointeraient vers localhost dans de vrais emails.
+    expect(() => validateEnv({ ...complet, PAYPLUG_SECRET_KEY: 'sk_live_123' })).toThrow(
+      /mélange probable/,
+    );
   });
 
   it('retire le slash final de PUBLIC_BASE_URL', () => {

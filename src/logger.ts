@@ -6,7 +6,7 @@
  *
  * C'est le seul point d'observation du tunnel de vente : paiement reçu, email
  * envoyé, téléchargement effectué passent tous par ici, pour qu'un problème de
- * livraison se diagnostique sans croiser les dashboards Stripe et Brevo.
+ * livraison se diagnostique sans croiser les dashboards PayPlug et Brevo.
  */
 type Level = 'debug' | 'info' | 'warn' | 'error';
 

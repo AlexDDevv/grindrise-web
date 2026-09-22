@@ -29,13 +29,15 @@ function contexte(maxUses = 5) {
   const db = new DatabaseSync(':memory:');
   applySchema(db);
   const orders = new OrdersRepository(db);
-  orders.insertPaidOrder({
-    checkoutSessionId: 'cs_test_1',
+  orders.createPending({
+    id: 'ord_1',
     productId: CATALOG[0].id,
     email: 'acheteur@example.com',
     amountTotal: CATALOG[0].priceCents,
     currency: CATALOG[0].currency,
   });
+  orders.attachPayment('ord_1', 'pay_1');
+  orders.markPaid('ord_1', 'pay_1');
 
   const app = Fastify({ routerOptions: { maxParamLength: DOWNLOAD_MAX_PARAM_LENGTH } });
   app.register(downloadRoutes, { config, orders });
@@ -46,7 +48,7 @@ function contexte(maxUses = 5) {
 describe('GET /api/download/:token', () => {
   it('sert le PDF pour un token valide', async () => {
     const { app, db, dataDir } = contexte();
-    const token = signDownloadToken('cs_test_1', SECRET, 7);
+    const token = signDownloadToken('ord_1', SECRET, 7);
 
     const reponse = await app.inject({ method: 'GET', url: `/api/download/${token}` });
 
@@ -60,7 +62,7 @@ describe('GET /api/download/:token', () => {
 
   it('refuse un token signé avec un autre secret', async () => {
     const { app, db, dataDir } = contexte();
-    const token = signDownloadToken('cs_test_1', 'mauvais-secret', 7);
+    const token = signDownloadToken('ord_1', 'mauvais-secret', 7);
 
     const reponse = await app.inject({ method: 'GET', url: `/api/download/${token}` });
 
@@ -72,7 +74,7 @@ describe('GET /api/download/:token', () => {
 
   it('refuse un token expiré', async () => {
     const { app, db, dataDir } = contexte();
-    const token = signDownloadToken('cs_test_1', SECRET, 7, new Date('2020-01-01T00:00:00Z'));
+    const token = signDownloadToken('ord_1', SECRET, 7, new Date('2020-01-01T00:00:00Z'));
 
     const reponse = await app.inject({ method: 'GET', url: `/api/download/${token}` });
 
@@ -85,7 +87,7 @@ describe('GET /api/download/:token', () => {
   it('refuse au-delà du quota de téléchargements', async () => {
     // C'est ce qui empêche un lien partagé de servir indéfiniment.
     const { app, db, dataDir } = contexte(2);
-    const token = signDownloadToken('cs_test_1', SECRET, 7);
+    const token = signDownloadToken('ord_1', SECRET, 7);
     const url = `/api/download/${token}`;
 
     expect((await app.inject({ method: 'GET', url })).statusCode).toBe(200);
@@ -116,12 +118,12 @@ describe('GET /api/download/:token', () => {
     const silence = jest.spyOn(console, 'error').mockImplementation(() => undefined);
     const { app, db, orders, config, dataDir } = contexte();
     rmSync(join(config.dataDir, 'ebooks', CATALOG[0].fileName));
-    const token = signDownloadToken('cs_test_1', SECRET, 7);
+    const token = signDownloadToken('ord_1', SECRET, 7);
 
     const reponse = await app.inject({ method: 'GET', url: `/api/download/${token}` });
 
     expect(reponse.statusCode).toBe(500);
-    expect(orders.findById('cs_test_1')?.downloadCount).toBe(0);
+    expect(orders.findById('ord_1')?.downloadCount).toBe(0);
     silence.mockRestore();
     await app.close();
     db.close();
