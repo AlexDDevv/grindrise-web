@@ -35,14 +35,23 @@ export class DeliveryService {
       );
     }
 
-    const token = signDownloadToken(
-      order.id,
-      config.downloadTokenSecret,
-      config.downloadTokenTtlDays,
-    );
+    // Un lien signé par fichier : l'indice vient de la position dans
+    // `produit.files`, celle-là même que la route de téléchargement relira.
+    const links = produit.files.map((ebook, fileIndex) => {
+      const token = signDownloadToken(
+        { orderId: order.id, fileIndex },
+        config.downloadTokenSecret,
+        config.downloadTokenTtlDays,
+      );
+      return {
+        title: ebook.title,
+        url: `${config.publicBaseUrl}/api/download/${token}`,
+      };
+    });
+
     const message = renderDeliveryEmail({
       productName: produit.name,
-      downloadUrl: `${config.publicBaseUrl}/api/download/${token}`,
+      links,
       ttlDays: config.downloadTokenTtlDays,
     });
 
@@ -61,6 +70,7 @@ export class DeliveryService {
     logger.info('Email envoyé', {
       orderId: order.id,
       productId: produit.id,
+      files: links.length,
       provider: email.name,
     });
   }

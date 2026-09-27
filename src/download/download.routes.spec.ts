@@ -5,7 +5,7 @@ import { DatabaseSync } from 'node:sqlite';
 
 import Fastify from 'fastify';
 
-import { CATALOG } from '../catalog/catalog';
+import { findProduct } from '../catalog/catalog';
 import type { AppConfig } from '../config/env.config';
 import { applySchema } from '../db/database';
 import { OrdersRepository } from '../db/orders.repository';
@@ -14,10 +14,16 @@ import { DOWNLOAD_MAX_PARAM_LENGTH, downloadRoutes } from './download.routes';
 
 const SECRET = 'secret-de-test';
 
+/** Le pack : deux fichiers, donc le cas qui distingue les quotas par fichier. */
+const PACK = findProduct('pack-complet')!;
+
 function contexte(maxUses = 5) {
   const dataDir = mkdtempSync(join(tmpdir(), 'grindrise-'));
   mkdirSync(join(dataDir, 'ebooks'), { recursive: true });
-  writeFileSync(join(dataDir, 'ebooks', CATALOG[0].fileName), '%PDF-1.4 contenu de test');
+  // Contenus distincts : c'est ce qui prouve que chaque lien sert SON fichier.
+  PACK.files.forEach((ebook, i) => {
+    writeFileSync(join(dataDir, 'ebooks', ebook.fileName), `%PDF-1.4 fichier ${i}`);
+  });
 
   const config = {
     dataDir,
@@ -31,10 +37,10 @@ function contexte(maxUses = 5) {
   const orders = new OrdersRepository(db);
   orders.createPending({
     id: 'ord_1',
-    productId: CATALOG[0].id,
+    productId: PACK.id,
     email: 'acheteur@example.com',
-    amountTotal: CATALOG[0].priceCents,
-    currency: CATALOG[0].currency,
+    amountTotal: PACK.priceCents,
+    currency: PACK.currency,
   });
   orders.attachPayment('ord_1', 'pay_1');
   orders.markPaid('ord_1', 'pay_1');
@@ -42,91 +48,114 @@ function contexte(maxUses = 5) {
   const app = Fastify({ routerOptions: { maxParamLength: DOWNLOAD_MAX_PARAM_LENGTH } });
   app.register(downloadRoutes, { config, orders });
 
-  return { app, db, orders, config, dataDir };
+  const lien = (fileIndex: number, secret = SECRET, emis?: Date) =>
+    `/api/download/${signDownloadToken({ orderId: 'ord_1', fileIndex }, secret, 7, emis)}`;
+
+  return { app, db, orders, config, dataDir, lien };
+}
+
+function nettoie(ctx: { app: { close: () => Promise<unknown> }; db: DatabaseSync; dataDir: string }) {
+  return ctx.app.close().then(() => {
+    ctx.db.close();
+    rmSync(ctx.dataDir, { recursive: true, force: true });
+  });
 }
 
 describe('GET /api/download/:token', () => {
-  it('sert le PDF pour un token valide', async () => {
-    const { app, db, dataDir } = contexte();
-    const token = signDownloadToken('ord_1', SECRET, 7);
+  it('sert le fichier que le token désigne, et lui seul', async () => {
+    const ctx = contexte();
 
-    const reponse = await app.inject({ method: 'GET', url: `/api/download/${token}` });
+    for (const [fileIndex, ebook] of PACK.files.entries()) {
+      const reponse = await ctx.app.inject({ method: 'GET', url: ctx.lien(fileIndex) });
 
-    expect(reponse.statusCode).toBe(200);
-    expect(reponse.headers['content-type']).toContain('application/pdf');
-    expect(reponse.rawPayload.toString()).toContain('%PDF');
-    await app.close();
-    db.close();
-    rmSync(dataDir, { recursive: true, force: true });
+      expect(reponse.statusCode).toBe(200);
+      expect(reponse.headers['content-type']).toContain('application/pdf');
+      expect(reponse.headers['content-disposition']).toContain(ebook.fileName);
+      expect(reponse.rawPayload.toString()).toBe(`%PDF-1.4 fichier ${fileIndex}`);
+    }
+
+    await nettoie(ctx);
+  });
+
+  it('compte le quota par fichier, pas par commande', async () => {
+    // Sans ça, l'acheteur du pack épuiserait sur un seul ebook les
+    // téléchargements dus aux deux.
+    const ctx = contexte(2);
+
+    expect((await ctx.app.inject({ method: 'GET', url: ctx.lien(0) })).statusCode).toBe(200);
+    expect((await ctx.app.inject({ method: 'GET', url: ctx.lien(0) })).statusCode).toBe(200);
+    expect((await ctx.app.inject({ method: 'GET', url: ctx.lien(0) })).statusCode).toBe(410);
+
+    // Le second ebook garde son quota intact.
+    expect((await ctx.app.inject({ method: 'GET', url: ctx.lien(1) })).statusCode).toBe(200);
+    expect(ctx.orders.downloadCount('ord_1', 0)).toBe(2);
+    expect(ctx.orders.downloadCount('ord_1', 1)).toBe(1);
+
+    await nettoie(ctx);
   });
 
   it('refuse un token signé avec un autre secret', async () => {
-    const { app, db, dataDir } = contexte();
-    const token = signDownloadToken('ord_1', 'mauvais-secret', 7);
+    const ctx = contexte();
 
-    const reponse = await app.inject({ method: 'GET', url: `/api/download/${token}` });
+    const reponse = await ctx.app.inject({
+      method: 'GET',
+      url: ctx.lien(0, 'mauvais-secret'),
+    });
 
     expect(reponse.statusCode).toBe(403);
-    await app.close();
-    db.close();
-    rmSync(dataDir, { recursive: true, force: true });
+    await nettoie(ctx);
   });
 
   it('refuse un token expiré', async () => {
-    const { app, db, dataDir } = contexte();
-    const token = signDownloadToken('ord_1', SECRET, 7, new Date('2020-01-01T00:00:00Z'));
+    const ctx = contexte();
 
-    const reponse = await app.inject({ method: 'GET', url: `/api/download/${token}` });
+    const reponse = await ctx.app.inject({
+      method: 'GET',
+      url: ctx.lien(0, SECRET, new Date('2020-01-01T00:00:00Z')),
+    });
 
     expect(reponse.statusCode).toBe(403);
-    await app.close();
-    db.close();
-    rmSync(dataDir, { recursive: true, force: true });
+    await nettoie(ctx);
   });
 
-  it('refuse au-delà du quota de téléchargements', async () => {
-    // C'est ce qui empêche un lien partagé de servir indéfiniment.
-    const { app, db, dataDir } = contexte(2);
-    const token = signDownloadToken('ord_1', SECRET, 7);
-    const url = `/api/download/${token}`;
+  it('refuse un indice de fichier que le produit ne contient pas', async () => {
+    // Token forgé, ou ordre des fichiers modifié dans le catalogue après
+    // l'envoi du lien : dans les deux cas, ne rien servir.
+    const silence = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const ctx = contexte();
 
-    expect((await app.inject({ method: 'GET', url })).statusCode).toBe(200);
-    expect((await app.inject({ method: 'GET', url })).statusCode).toBe(200);
-    expect((await app.inject({ method: 'GET', url })).statusCode).toBe(410);
-    await app.close();
-    db.close();
-    rmSync(dataDir, { recursive: true, force: true });
+    const reponse = await ctx.app.inject({ method: 'GET', url: ctx.lien(9) });
+
+    expect(reponse.statusCode).toBe(403);
+    expect(ctx.orders.downloadCount('ord_1', 9)).toBe(0);
+    silence.mockRestore();
+    await nettoie(ctx);
   });
 
   it('refuse un token valide pointant vers une commande inconnue', async () => {
     const silence = jest.spyOn(console, 'error').mockImplementation(() => undefined);
-    const { app, db, dataDir } = contexte();
-    const token = signDownloadToken('cs_inexistante', SECRET, 7);
+    const ctx = contexte();
+    const token = signDownloadToken({ orderId: 'ord_inexistante', fileIndex: 0 }, SECRET, 7);
 
-    const reponse = await app.inject({ method: 'GET', url: `/api/download/${token}` });
+    const reponse = await ctx.app.inject({ method: 'GET', url: `/api/download/${token}` });
 
     expect(reponse.statusCode).toBe(403);
     silence.mockRestore();
-    await app.close();
-    db.close();
-    rmSync(dataDir, { recursive: true, force: true });
+    await nettoie(ctx);
   });
 
   it('ne consomme pas le quota quand le fichier est introuvable', async () => {
     // Un PDF absent du volume est notre panne, pas celle de l'acheteur :
     // décrémenter ses téléchargements restants serait une double peine.
     const silence = jest.spyOn(console, 'error').mockImplementation(() => undefined);
-    const { app, db, orders, config, dataDir } = contexte();
-    rmSync(join(config.dataDir, 'ebooks', CATALOG[0].fileName));
-    const token = signDownloadToken('ord_1', SECRET, 7);
+    const ctx = contexte();
+    rmSync(join(ctx.config.dataDir, 'ebooks', PACK.files[0].fileName));
 
-    const reponse = await app.inject({ method: 'GET', url: `/api/download/${token}` });
+    const reponse = await ctx.app.inject({ method: 'GET', url: ctx.lien(0) });
 
     expect(reponse.statusCode).toBe(500);
-    expect(orders.findById('ord_1')?.downloadCount).toBe(0);
+    expect(ctx.orders.downloadCount('ord_1', 0)).toBe(0);
     silence.mockRestore();
-    await app.close();
-    db.close();
-    rmSync(dataDir, { recursive: true, force: true });
+    await nettoie(ctx);
   });
 });

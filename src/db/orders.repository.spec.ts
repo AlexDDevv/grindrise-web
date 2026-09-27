@@ -112,7 +112,7 @@ describe('OrdersRepository', () => {
       depot.attachPayment('ord_1', 'pay_1');
       depot.markPaid('ord_1', 'pay_1');
       depot.markDelivered('ord_1', { provider: 'brevo' });
-      depot.claimDownload('ord_1', 5);
+      depot.claimDownload('ord_1', 0, 5);
 
       expect(types()).toEqual([
         'order_created',
@@ -151,11 +151,11 @@ describe('OrdersRepository', () => {
     it('trace un téléchargement refusé et sa raison', () => {
       depot.createPending(commande);
 
-      depot.claimDownload('ord_1', 5);
+      depot.claimDownload('ord_1', 0, 5);
 
       expect(depot.listEvents('ord_1').at(-1)).toMatchObject({
         type: 'download_refused',
-        detail: { reason: 'not_paid' },
+        detail: { reason: 'not_paid', fileIndex: 0 },
       });
     });
 
@@ -204,20 +204,35 @@ describe('OrdersRepository', () => {
       depot.attachPayment('ord_1', 'pay_1');
       depot.markPaid('ord_1', 'pay_1');
 
-      expect(depot.claimDownload('ord_1', 2)).toBe(true);
-      expect(depot.claimDownload('ord_1', 2)).toBe(true);
-      expect(depot.claimDownload('ord_1', 2)).toBe(false);
+      expect(depot.claimDownload('ord_1', 0, 2)).toBe(true);
+      expect(depot.claimDownload('ord_1', 0, 2)).toBe(true);
+      expect(depot.claimDownload('ord_1', 0, 2)).toBe(false);
+      expect(depot.downloadCount('ord_1', 0)).toBe(2);
+    });
+
+    it('tient un quota séparé par fichier', () => {
+      // Le pack livre deux ebooks : épuiser l'un ne doit pas fermer l'autre.
+      depot.createPending(commande);
+      depot.attachPayment('ord_1', 'pay_1');
+      depot.markPaid('ord_1', 'pay_1');
+
+      expect(depot.claimDownload('ord_1', 0, 1)).toBe(true);
+      expect(depot.claimDownload('ord_1', 0, 1)).toBe(false);
+      expect(depot.claimDownload('ord_1', 1, 1)).toBe(true);
+      expect(depot.downloadCount('ord_1', 1)).toBe(1);
+      // Le compteur global de la commande agrège les deux fichiers.
       expect(depot.findById('ord_1')?.downloadCount).toBe(2);
     });
 
     it('refuse pour une commande jamais payée', () => {
       depot.createPending(commande);
 
-      expect(depot.claimDownload('ord_1', 5)).toBe(false);
+      expect(depot.claimDownload('ord_1', 0, 5)).toBe(false);
+      expect(depot.downloadCount('ord_1', 0)).toBe(0);
     });
 
     it('refuse pour une commande inexistante', () => {
-      expect(depot.claimDownload('ord_inconnue', 5)).toBe(false);
+      expect(depot.claimDownload('ord_inconnue', 0, 5)).toBe(false);
     });
   });
 });

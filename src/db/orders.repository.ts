@@ -270,31 +270,43 @@ export class OrdersRepository {
   }
 
   /**
-   * Consomme un téléchargement, et trace l'issue.
+   * Consomme un téléchargement du fichier `fileIndex` de la commande, et trace
+   * l'issue.
    *
-   * Le test du quota et l'incrément sont une seule instruction SQL : les
-   * séparer permettrait à deux requêtes simultanées de passer toutes les deux
-   * le contrôle avant que l'une n'incrémente. Une commande encore `pending`
-   * n'a jamais été payée : aucun téléchargement ne lui est accordé.
+   * Le contrôle du quota, l'incrément et la vérification que la commande est
+   * payée tiennent en une seule instruction SQL : les séparer permettrait à
+   * deux requêtes simultanées de passer toutes les deux le contrôle avant que
+   * l'une n'incrémente. Le quota s'applique par fichier — le pack livre deux
+   * ebooks, chacun avec ses propres téléchargements.
    *
-   * @returns false si la commande n'existe pas, n'est pas payée ou si le quota
-   *   est atteint.
+   * @returns false si la commande n'existe pas, n'est pas payée, ou si le quota
+   *   de ce fichier est atteint.
    */
-  claimDownload(orderId: string, maxUses: number): boolean {
+  claimDownload(orderId: string, fileIndex: number, maxUses: number): boolean {
     return this.atomically(() => {
+      const maintenant = new Date().toISOString();
       const result = this.db
         .prepare(
-          `UPDATE orders SET download_count = download_count + 1
-           WHERE id = ? AND status != 'pending' AND download_count < ?`,
+          `INSERT INTO order_downloads (order_id, file_index, count, first_at, last_at)
+           SELECT ?, ?, 1, ?, ? FROM orders WHERE id = ? AND status != 'pending'
+           ON CONFLICT (order_id, file_index)
+             DO UPDATE SET count = count + 1, last_at = excluded.last_at
+             WHERE count < ?`,
         )
-        .run(orderId, maxUses);
+        .run(orderId, fileIndex, maintenant, maintenant, orderId, maxUses);
 
       const commande = this.findById(orderId);
       if (result.changes > 0) {
+        // Compteur global de la commande : redondant avec order_downloads, mais
+        // il évite une jointure pour la question « cette commande a-t-elle été
+        // téléchargée ? », la plus fréquente en rattrapage.
+        this.db
+          .prepare('UPDATE orders SET download_count = download_count + 1 WHERE id = ?')
+          .run(orderId);
         this.recordEvent({
           type: 'download_served',
           orderId,
-          detail: { count: commande?.downloadCount },
+          detail: { fileIndex, count: this.downloadCount(orderId, fileIndex) },
         });
         return true;
       }
@@ -304,8 +316,21 @@ export class OrdersRepository {
         : commande.status === 'pending'
           ? 'not_paid'
           : 'quota_reached';
-      this.recordEvent({ type: 'download_refused', orderId, detail: { reason, maxUses } });
+      this.recordEvent({
+        type: 'download_refused',
+        orderId,
+        detail: { fileIndex, reason, maxUses },
+      });
       return false;
     });
+  }
+
+  /** Nombre de téléchargements déjà consommés pour un fichier d'une commande. */
+  downloadCount(orderId: string, fileIndex: number): number {
+    const row = this.db
+      .prepare('SELECT count FROM order_downloads WHERE order_id = ? AND file_index = ?')
+      .get(orderId, fileIndex) as { count: number } | undefined;
+
+    return row?.count ?? 0;
   }
 }

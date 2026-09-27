@@ -94,7 +94,11 @@ describe('buildServer', () => {
     // instance Fastify, ce test verrouille la configuration réelle.
     const app = await buildServer(deps());
     const commande = `ord_${randomUUID()}`;
-    const token = signDownloadToken(commande, config.downloadTokenSecret, 7);
+    const token = signDownloadToken(
+      { orderId: commande, fileIndex: 0 },
+      config.downloadTokenSecret,
+      7,
+    );
 
     const reponse = await app.inject({ method: 'GET', url: `/api/download/${token}` });
 

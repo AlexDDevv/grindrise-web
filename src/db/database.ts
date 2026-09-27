@@ -39,6 +39,18 @@ export function applySchema(db: DatabaseSync): void {
       delivered_at        TEXT
     );
 
+    -- Quota de téléchargement, compté par FICHIER et non par commande : le
+    -- pack livre deux ebooks, chacun avec ses propres téléchargements. La ligne
+    -- n'existe qu'à partir du premier téléchargement du fichier.
+    CREATE TABLE IF NOT EXISTS order_downloads (
+      order_id   TEXT    NOT NULL,
+      file_index INTEGER NOT NULL,
+      count      INTEGER NOT NULL,
+      first_at   TEXT    NOT NULL,
+      last_at    TEXT    NOT NULL,
+      PRIMARY KEY (order_id, file_index)
+    );
+
     -- Journal d'audit : ce que le serveur a fait de chaque commande et de
     -- chaque paiement, dans l'ordre. La table orders ne garde que l'état courant ;
     -- l'historique vit ici. order_id et payment_id sont tous deux nullables :

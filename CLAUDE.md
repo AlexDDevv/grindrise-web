@@ -37,7 +37,8 @@ mocks typés du client PayPlug / du provider email.
 Flux d'une commande :
 
 1. **Checkout** (`checkout/`) : le prix vient toujours de `catalog/catalog.ts`
-   (catalogue en dur), jamais du client. Crée la commande `pending`, puis le
+   (catalogue en dur : deux ebooks à l'unité et un pack des deux), jamais du
+   client. Crée la commande `pending`, puis le
    paiement PayPlug avec `metadata.order_id`, puis y rattache le `payment_id`.
 2. **Notification IPN** (`notification/`) : PayPlug **ne signe pas** ses
    notifications. Le corps ne sert qu'à extraire un `pay_…` ; toute décision repose
@@ -53,6 +54,13 @@ Flux d'une commande :
    (`DOWNLOAD_MAX_USES`), le fichier existe avant de consommer le quota. Les PDF
    sont dans `${DATA_DIR}/ebooks/`, déposés à la main, hors dépôt.
 
+**Produits multi-fichiers** : `Product.files` liste les ebooks d'une offre (le
+pack en a deux). L'email contient un lien signé par fichier, jamais d'archive.
+Le token porte `{ orderId, fileIndex }` et le quota est compté par fichier dans
+`order_downloads`. **L'ordre de `files` est structurant** : il est gravé dans
+les tokens déjà envoyés, donc on ajoute en fin de liste, on n'insère pas au
+milieu.
+
 Statuts : `pending | paid | delivered | delivery_failed`.
 
 ## Invariants à respecter
@@ -66,6 +74,10 @@ Statuts : `pending | paid | delivered | delivery_failed`.
   adresse IP stockée. Ne pas archiver le corps brut des notifications.
 - **Logs** : tout passe par `src/logger.ts` (JSON une ligne), le logger Fastify
   est désactivé. `docker-entrypoint.sh` émet le même format.
+- **Page d'achat et catalogue** : `public/ebooks/index.html` répète prix et
+  titres à la main ; `src/catalog/catalog.spec.ts` verrouille la cohérence
+  (identifiants, prix affiché = prix facturé, titres) et la validité du script
+  inline. Tout changement de prix ou de titre touche les deux fichiers.
 - **Schéma** : pas d'outil de migration, `applySchema` fait des
   `CREATE ... IF NOT EXISTS` et refuse de démarrer sur l'ancien schéma Stripe. Un
   changement de colonne sur une base existante doit être traité explicitement.

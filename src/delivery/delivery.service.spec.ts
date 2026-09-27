@@ -1,6 +1,6 @@
 import { DatabaseSync } from 'node:sqlite';
 
-import { CATALOG } from '../catalog/catalog';
+import { CATALOG, findProduct } from '../catalog/catalog';
 import type { AppConfig } from '../config/env.config';
 import { applySchema } from '../db/database';
 import { OrdersRepository } from '../db/orders.repository';
@@ -14,7 +14,10 @@ const config = {
   downloadTokenTtlDays: 7,
 } as AppConfig;
 
-function contexte() {
+/** Le pack : deux fichiers, donc deux liens à vérifier. */
+const PACK = findProduct('pack-complet')!;
+
+function contexte(productId: string = CATALOG[0].id) {
   const db = new DatabaseSync(':memory:');
   applySchema(db);
   const orders = new OrdersRepository(db);
@@ -23,7 +26,7 @@ function contexte() {
 
   orders.createPending({
     id: 'ord_1',
-    productId: CATALOG[0].id,
+    productId,
     email: 'acheteur@example.com',
     amountTotal: CATALOG[0].priceCents,
     currency: CATALOG[0].currency,
@@ -46,7 +49,33 @@ describe('DeliveryService', () => {
 
     const lien = message.text.match(/https:\/\/\S+/)![0];
     const token = lien.split('/').pop()!;
-    expect(verifyDownloadToken(token, config.downloadTokenSecret)).toBe('ord_1');
+    expect(verifyDownloadToken(token, config.downloadTokenSecret)).toEqual({
+      orderId: 'ord_1',
+      fileIndex: 0,
+    });
+    db.close();
+  });
+
+  it('envoie un lien par ebook pour le pack, chacun désignant son fichier', async () => {
+    // Un seul lien pour deux ebooks, ou deux liens vers le même fichier :
+    // l'acheteur aurait payé 14,90 € pour un seul livre.
+    const { orders, send, service, db } = contexte(PACK.id);
+
+    await service.deliver(orders.findById('ord_1')!);
+
+    const message = send.mock.calls[0][0] as { text: string };
+    const tokens = [...message.text.matchAll(/https:\/\/\S+\/api\/download\/(\S+)/g)].map(
+      (m) => m[1],
+    );
+
+    expect(tokens).toHaveLength(PACK.files.length);
+    expect(tokens.map((t) => verifyDownloadToken(t, config.downloadTokenSecret))).toEqual([
+      { orderId: 'ord_1', fileIndex: 0 },
+      { orderId: 'ord_1', fileIndex: 1 },
+    ]);
+    for (const ebook of PACK.files) {
+      expect(message.text).toContain(ebook.title);
+    }
     db.close();
   });
 

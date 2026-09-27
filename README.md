@@ -78,7 +78,9 @@ premier paiement.
 /data
 ├── orders.db        base SQLite : commandes (état courant) et journal
 │                    d'audit en ajout seul, conservés 10 ans
-└── ebooks/          les PDF vendus, déposés manuellement
+└── ebooks/          les PDF vendus, déposés manuellement :
+                     le-corps-qui-tient.pdf
+                     ce-que-lassiette-construit.pdf
 ```
 
 En production, c'est un **volume persistant CapRover** monté sur `/data`, et
