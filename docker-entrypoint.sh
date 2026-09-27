@@ -37,6 +37,16 @@ if [ -n "$missing" ]; then
   exit 1
 fi
 
+# Le code de région s'écrit en minuscules avec des tirets (eu-west-par) et sert
+# aussi à bâtir l'endpoint. Sans ce contrôle, une faute de frappe ne se voit que
+# dans une erreur brute du SDK AWS.
+case "$LITESTREAM_REGION" in
+  *[!a-z0-9-]*)
+    log error "LITESTREAM_REGION invalide : '$LITESTREAM_REGION'. Code de région OVH attendu, en minuscules avec des tirets : gra, sbg, rbx, eu-west-par."
+    exit 1
+    ;;
+esac
+
 mkdir -p "$DATA_DIR"
 
 # --- 2. Bucket joignable -----------------------------------------------------
