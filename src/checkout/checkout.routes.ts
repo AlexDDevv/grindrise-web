@@ -66,8 +66,8 @@ export async function checkoutRoutes(
         billing: { email, language: 'fr' },
         shipping: { email, language: 'fr', delivery_type: 'DIGITAL_GOODS' },
         hosted_payment: {
-          return_url: `${config.publicBaseUrl}/success`,
-          cancel_url: `${config.publicBaseUrl}/cancel`,
+          return_url: `${config.publicBaseUrl}/ebooks/success`,
+          cancel_url: `${config.publicBaseUrl}/ebooks/cancel`,
         },
         notification_url: `${config.publicBaseUrl}/api/payplug/notification`,
         // La notification ne porte que l'identifiant du paiement : c'est ce

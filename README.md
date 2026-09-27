@@ -8,7 +8,9 @@ L'intégration Brevo y est dupliquée volontairement plutôt que partagée : ce
 service doit pouvoir être déployé, cassé et redéployé sans toucher au reste.
 
 > Design et UI réels : chantier suivant. Les pages servies ici sont des
-> placeholders non designés, le temps de prouver le flow de paiement.
+> placeholders non designés, le temps de prouver le flow de paiement. Le tunnel
+> de vente est servi sous `/ebooks` ; la racine est réservée à la future landing
+> GrindRise.
 
 ## Stack
 

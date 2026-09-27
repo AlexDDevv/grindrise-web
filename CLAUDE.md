@@ -89,4 +89,7 @@ pas le shim Volta.
   tout ce qui touche au paiement (flow, tests, bascule en live).
 - `spec/2026-09-22-sauvegarde-litestream.md` : sauvegarde, rétention, restauration.
 - `docs/` n'est pas versionné (notes produit).
-- Les pages de `public/` sont des placeholders non designés.
+- Les pages de `public/` sont des placeholders non designés. Le tunnel de vente
+  est servi sous `/ebooks` (`public/ebooks/`), la racine est réservée à la
+  future landing GrindRise : `/success` et `/cancel` n'existent plus, les URL
+  de retour envoyées à PayPlug sont `/ebooks/success` et `/ebooks/cancel`.

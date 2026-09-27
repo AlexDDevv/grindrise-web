@@ -88,8 +88,8 @@ describe('POST /api/checkout', () => {
     expect(args.billing.email).toBe('acheteur@example.com');
     expect(args.notification_url).toBe('https://exemple.fr/api/payplug/notification');
     expect(args.hosted_payment).toEqual({
-      return_url: 'https://exemple.fr/success',
-      cancel_url: 'https://exemple.fr/cancel',
+      return_url: 'https://exemple.fr/ebooks/success',
+      cancel_url: 'https://exemple.fr/ebooks/cancel',
     });
     await app.close();
     db.close();

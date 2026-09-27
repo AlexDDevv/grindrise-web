@@ -55,8 +55,14 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
     }
   });
 
-  app.get('/success', async (_request, reply) => reply.sendFile('success.html'));
-  app.get('/cancel', async (_request, reply) => reply.sendFile('cancel.html'));
+  // Le tunnel de vente vit sous /ebooks : la racine est réservée à la future
+  // landing GrindRise. Ces routes explicites doublent le service statique, qui
+  // ne répond sur un répertoire qu'avec un slash final (/ebooks/).
+  app.get('/ebooks', async (_request, reply) => reply.sendFile('ebooks/index.html'));
+  app.get('/ebooks/success', async (_request, reply) =>
+    reply.sendFile('ebooks/success.html'),
+  );
+  app.get('/ebooks/cancel', async (_request, reply) => reply.sendFile('ebooks/cancel.html'));
 
   await app.register(checkoutRoutes, {
     config: deps.config,

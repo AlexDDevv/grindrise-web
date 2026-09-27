@@ -63,13 +63,26 @@ describe('buildServer', () => {
     await app.close();
   });
 
-  it("sert la page d'accueil", async () => {
+  it("sert la page d'accueil provisoire, distincte du tunnel de vente", async () => {
     const app = await buildServer(deps());
 
     const reponse = await app.inject({ method: 'GET', url: '/' });
 
     expect(reponse.statusCode).toBe(200);
     expect(reponse.headers['content-type']).toContain('text/html');
+    expect(reponse.body).not.toContain('Acheter');
+    await app.close();
+  });
+
+  it('sert la page d’achat sur /ebooks, sans slash final', async () => {
+    // @fastify/static ne répond sur un répertoire qu'avec le slash final : sans
+    // route explicite, le lien /ebooks donné aux acheteurs serait en 404.
+    const app = await buildServer(deps());
+
+    const reponse = await app.inject({ method: 'GET', url: '/ebooks' });
+
+    expect(reponse.statusCode).toBe(200);
+    expect(reponse.body).toContain('Acheter');
     await app.close();
   });
 
@@ -91,9 +104,11 @@ describe('buildServer', () => {
   });
 
   it('sert les pages de retour de paiement', async () => {
+    // Ce sont les URL transmises à PayPlug : une 404 ici renverrait l'acheteur
+    // sur une page morte juste après avoir payé.
     const app = await buildServer(deps());
 
-    for (const chemin of ['/success', '/cancel']) {
+    for (const chemin of ['/ebooks/success', '/ebooks/cancel']) {
       const reponse = await app.inject({ method: 'GET', url: chemin });
       expect(reponse.statusCode).toBe(200);
     }

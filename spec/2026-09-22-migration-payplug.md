@@ -45,7 +45,7 @@ Navigateur                 Ce service                PayPlug         Brevo
     │<──────── payment_url ────│<──────────────────────│               │
     │                          │                       │               │
     │ ───────────── paiement sur la page PayPlug ─────>│               │
-    │<──────────── redirection /success ou /cancel ────│               │
+    │<────── redirection /ebooks/success ou /cancel ───│               │
     │                          │                       │               │
     │                          │<── IPN {id: pay_…} ───│               │
     │                          │ GET /v1/payments/id ─>│  (seule source│
@@ -58,7 +58,8 @@ Navigateur                 Ce service                PayPlug         Brevo
 ```
 
 La livraison n'est déclenchée que par la notification vérifiée, jamais par le
-retour sur `/success` : l'acheteur peut fermer l'onglet avant, et cette URL est
+retour sur `/ebooks/success` : l'acheteur peut fermer l'onglet avant, et cette
+URL est
 triviale à appeler sans payer.
 
 À la réception d'une notification, dans l'ordre :
@@ -185,7 +186,9 @@ reste manuel.
 | `POST`  | `/api/checkout`               | `{productId, email}` → commande + paiement PayPlug   |
 | `POST`  | `/api/payplug/notification`   | IPN : relecture du paiement, puis livraison          |
 | `GET`   | `/api/download/:token`        | Inchangée                                            |
-| `GET`   | `/health`, `/`, `/success`, `/cancel` | Inchangées                                   |
+| `GET`   | `/ebooks`                     | Page d'achat (`/` est réservé à la landing)          |
+| `GET`   | `/ebooks/success`, `/ebooks/cancel` | Retours de paiement, transmis à PayPlug        |
+| `GET`   | `/health`, `/`                | Inchangées                                           |
 
 ---
 
@@ -246,7 +249,7 @@ future, n'importe quel CVC.
 
 1. logs : `Paiement créé`, puis `Notification reçue`, `Paiement confirmé`,
    `Email envoyé` ;
-2. le navigateur revient sur `/success` ;
+2. le navigateur revient sur `/ebooks/success` ;
 3. l'email arrive, le lien sert le PDF, le log `Téléchargement effectué` sort ;
 4. au 6ᵉ téléchargement, le lien répond en erreur ;
 5. dans le portail PayPlug, en mode TEST, le paiement apparaît comme payé.
@@ -272,7 +275,8 @@ identifiant inventé (`pay_inexistant`) : `400`.
 (fonds insuffisants), `4000 0000 0000 0085` (erreur de traitement),
 `5184 6800 0000 0170` (3-D Secure refusé). Aucune livraison ne doit partir.
 
-**Abandon** : cliquer « annuler » sur la page PayPlug ramène sur `/cancel` ; la
+**Abandon** : cliquer « annuler » sur la page PayPlug ramène sur
+`/ebooks/cancel` ; la
 commande reste `pending`, sans aucun email.
 
 ---
