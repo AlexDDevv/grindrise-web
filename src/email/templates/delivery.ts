@@ -41,6 +41,10 @@ export function renderDeliveryEmail(input: {
       ),
       '</ul>',
       `<p>${pluriel ? 'Ces liens restent valables' : 'Ce lien reste valable'} ${input.ttlDays} jours.</p>`,
+      // Rappel du consentement donné avant le paiement : la confirmation de
+      // commande doit le reprendre (article L221-13 du Code de la consommation).
+      `<p>Vous avez demandé la livraison immédiate de ce contenu numérique et reconnu perdre,
+         de ce fait, votre droit de rétractation.</p>`,
       `<p>Un problème pour télécharger ? Répondez simplement à cet email.</p>`,
     ].join('\n'),
     text: [
@@ -48,6 +52,9 @@ export function renderDeliveryEmail(input: {
       '',
       ...input.links.flatMap((lien) => [`${lien.title} :`, lien.url, '']),
       `${pluriel ? 'Ces liens restent valables' : 'Ce lien reste valable'} ${input.ttlDays} jours.`,
+      '',
+      'Vous avez demandé la livraison immédiate de ce contenu numérique et reconnu perdre,',
+      'de ce fait, votre droit de rétractation.',
       '',
       'Un problème pour télécharger ? Répondez simplement à cet email.',
     ].join('\n'),

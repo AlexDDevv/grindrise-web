@@ -44,6 +44,7 @@ type OrderRow = {
  */
 export type OrderEventType =
   | 'order_created'
+  | 'withdrawal_waived'
   | 'payment_created'
   | 'payment_creation_failed'
   | 'notification_received'

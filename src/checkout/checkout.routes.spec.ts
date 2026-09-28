@@ -37,7 +37,7 @@ function contexte(createPayment: CreatePaymentMock = jest.fn(async (_params) => 
   return { app, db, orders, createPayment };
 }
 
-const achat = { productId: CATALOG[0].id, email: 'acheteur@example.com' };
+const achat = { productId: CATALOG[0].id, email: 'acheteur@example.com', waiveWithdrawal: true };
 
 describe('POST /api/checkout', () => {
   it('crée un paiement PayPlug et renvoie son URL de paiement', async () => {
@@ -138,6 +138,39 @@ describe('POST /api/checkout', () => {
       expect(reponse.statusCode).toBe(400);
     }
     expect(createPayment).not.toHaveBeenCalled();
+    await app.close();
+    db.close();
+  });
+
+  it('refuse une commande sans renoncement au droit de rétractation', async () => {
+    // Sans cet accord exprès recueilli avant le paiement, l'exception au droit
+    // de rétractation des contenus numériques ne s'applique pas : l'acheteur
+    // pourrait exiger le remboursement d'un ebook déjà téléchargé.
+    const { app, db, createPayment, orders } = contexte();
+
+    for (const waiveWithdrawal of [undefined, false, 'oui', 1]) {
+      const reponse = await app.inject({
+        method: 'POST',
+        url: '/api/checkout',
+        payload: { productId: achat.productId, email: achat.email, waiveWithdrawal },
+      });
+      expect(reponse.statusCode).toBe(400);
+    }
+
+    expect(createPayment).not.toHaveBeenCalled();
+    expect(orders.listEvents('ord_1')).toEqual([]);
+    await app.close();
+    db.close();
+  });
+
+  it('horodate le renoncement dans le journal, avant le paiement', async () => {
+    const { app, db, orders, createPayment } = contexte();
+
+    await app.inject({ method: 'POST', url: '/api/checkout', payload: achat });
+
+    const orderId = createPayment.mock.calls[0][0].metadata.order_id;
+    const types = orders.listEvents(orderId).map((e) => e.type);
+    expect(types).toEqual(['order_created', 'withdrawal_waived', 'payment_created']);
     await app.close();
     db.close();
   });

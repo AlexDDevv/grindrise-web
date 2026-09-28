@@ -64,6 +64,16 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
   );
   app.get('/ebooks/cancel', async (_request, reply) => reply.sendFile('ebooks/cancel.html'));
 
+  // Pages légales : elles doivent rester atteignables AVANT l'achat, c'est ce
+  // qui rend les conditions opposables à l'acheteur.
+  app.get('/legal/mentions-legales', async (_request, reply) =>
+    reply.sendFile('legal/mentions-legales.html'),
+  );
+  app.get('/legal/confidentialite', async (_request, reply) =>
+    reply.sendFile('legal/confidentialite.html'),
+  );
+  app.get('/legal/cgv', async (_request, reply) => reply.sendFile('legal/cgv.html'));
+
   await app.register(checkoutRoutes, {
     config: deps.config,
     payplug: deps.payplug,

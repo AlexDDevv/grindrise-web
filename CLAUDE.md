@@ -61,6 +61,14 @@ Le token porte `{ orderId, fileIndex }` et le quota est compté par fichier dans
 les tokens déjà envoyés, donc on ajoute en fin de liste, on n'insère pas au
 milieu.
 
+**Renoncement au droit de rétractation** : `/api/checkout` refuse une commande
+sans `waiveWithdrawal: true` (contenu numérique livré immédiatement, article
+L221-28 13° du Code de la consommation). Le consentement est horodaté dans le
+journal (`withdrawal_waived`) avant la création du paiement, et rappelé dans
+l'email de livraison. Les pages légales sont dans `public/legal/`, servies sous
+`/legal/…`, et décrivent le comportement réel du code (quota, durée des liens,
+conservation 10 ans) : les garder synchronisées.
+
 Statuts : `pending | paid | delivered | delivery_failed`.
 
 ## Invariants à respecter

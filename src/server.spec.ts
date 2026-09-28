@@ -107,6 +107,23 @@ describe('buildServer', () => {
     await app.close();
   });
 
+  it('sert les pages légales', async () => {
+    // Elles doivent être atteignables avant l'achat : c'est ce qui rend les
+    // conditions opposables, et les mentions légales sont obligatoires.
+    const app = await buildServer(deps());
+
+    for (const chemin of [
+      '/legal/mentions-legales',
+      '/legal/cgv',
+      '/legal/confidentialite',
+    ]) {
+      const reponse = await app.inject({ method: 'GET', url: chemin });
+      expect(reponse.statusCode).toBe(200);
+      expect(reponse.headers['content-type']).toContain('text/html');
+    }
+    await app.close();
+  });
+
   it('sert les pages de retour de paiement', async () => {
     // Ce sont les URL transmises à PayPlug : une 404 ici renverrait l'acheteur
     // sur une page morte juste après avoir payé.

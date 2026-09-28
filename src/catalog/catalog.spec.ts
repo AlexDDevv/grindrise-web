@@ -106,6 +106,21 @@ describe('catalogue', () => {
       }
     });
 
+    it('recueille le renoncement au droit de rétractation', () => {
+      // La case doit être présente, obligatoire, et son état réellement envoyé
+      // au serveur : une case décorative ne prouverait rien.
+      expect(page).toContain('id="consentement"');
+      expect(page).toMatch(/type="checkbox"[^>]*required|required[^>]*type="checkbox"/);
+      expect(page).toContain('waiveWithdrawal: consentement.checked');
+      expect(page).toContain('droit de rétractation');
+    });
+
+    it('renvoie vers les pages légales', () => {
+      for (const lien of ['/legal/cgv', '/legal/mentions-legales', '/legal/confidentialite']) {
+        expect(page).toContain(`href="${lien}"`);
+      }
+    });
+
     it('embarque un script syntaxiquement valide', () => {
       // La page n'est couverte par aucun outil de build : une apostrophe
       // typographique glissée dans une chaîne JavaScript casserait le bouton

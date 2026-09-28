@@ -57,6 +57,15 @@ describe('renderDeliveryEmail', () => {
     expect(text).toContain('7');
   });
 
+  it('rappelle le renoncement au droit de rétractation', () => {
+    // La confirmation de commande doit reprendre le consentement donné avant
+    // le paiement (article L221-13 du Code de la consommation).
+    const { html, text } = renderDeliveryEmail(unEbook);
+
+    expect(html).toContain('droit de rétractation');
+    expect(text).toContain('droit de rétractation');
+  });
+
   it('échappe le HTML du nom de produit et des titres', () => {
     const { html } = renderDeliveryEmail({
       ...unEbook,

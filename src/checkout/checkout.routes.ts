@@ -29,7 +29,9 @@ export async function checkoutRoutes(
   const { config, payplug, orders } = opts;
 
   app.post('/api/checkout', async (request, reply) => {
-    const body = request.body as { productId?: unknown; email?: unknown } | undefined;
+    const body = request.body as
+      | { productId?: unknown; email?: unknown; waiveWithdrawal?: unknown }
+      | undefined;
     const productId = typeof body?.productId === 'string' ? body.productId : undefined;
 
     if (!productId) {
@@ -41,6 +43,16 @@ export async function checkoutRoutes(
     const email = parseEmail(body?.email);
     if (!email) {
       return reply.code(400).send({ error: 'Adresse email invalide.' });
+    }
+
+    // Contenu numérique livré immédiatement : l'article L221-28 13° du Code de
+    // la consommation n'écarte le droit de rétractation que si l'acheteur a
+    // donné son accord exprès AVANT le paiement. Sans cette preuve, une
+    // demande de rétractation serait fondée, ebook déjà livré ou non.
+    if (body?.waiveWithdrawal !== true) {
+      return reply.code(400).send({
+        error: 'Vous devez accepter les conditions de vente et la livraison immédiate.',
+      });
     }
 
     // Le prix vient TOUJOURS du catalogue serveur. Un montant transmis par le
@@ -58,6 +70,10 @@ export async function checkoutRoutes(
       amountTotal: produit.priceCents,
       currency: produit.currency,
     });
+
+    // Horodaté dans le journal d'audit, en ajout seul : c'est la preuve du
+    // consentement, et elle doit survivre à tout changement d'état ultérieur.
+    orders.recordEvent({ type: 'withdrawal_waived', orderId });
 
     try {
       const paiement = await payplug.createPayment({

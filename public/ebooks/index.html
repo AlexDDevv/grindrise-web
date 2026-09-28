@@ -52,13 +52,35 @@
       <p>Vous recevez un lien de téléchargement par ebook.</p>
       <p><strong>14,90 €</strong> au lieu de 19,80 €</p>
       <p><button type="submit" name="productId" value="pack-complet">Acheter les deux</button></p>
+
+      <!-- Obligatoire : sans cet accord exprès recueilli AVANT le paiement,
+           l’exception au droit de rétractation des contenus numériques ne
+           s’applique pas (article L221-28 13° du Code de la consommation).
+           Le serveur refuse la commande si la case n’est pas cochée. -->
+      <p>
+        <label>
+          <input type="checkbox" id="consentement" required />
+          J’accepte les <a href="/legal/cgv" target="_blank">conditions générales de vente</a>
+          et je demande la livraison immédiate de mon ebook. Je reconnais perdre de ce fait
+          mon droit de rétractation.
+        </label>
+      </p>
     </form>
 
     <p id="erreur" role="alert" hidden></p>
 
+    <footer>
+      <p>
+        <a href="/legal/mentions-legales">Mentions légales</a> ·
+        <a href="/legal/cgv">Conditions générales de vente</a> ·
+        <a href="/legal/confidentialite">Politique de confidentialité</a>
+      </p>
+    </footer>
+
     <script>
       const formulaire = document.getElementById('achat');
       const champEmail = document.getElementById('email');
+      const consentement = document.getElementById('consentement');
       const erreur = document.getElementById('erreur');
       const boutons = formulaire.querySelectorAll('button[type="submit"]');
 
@@ -80,7 +102,11 @@
           const reponse = await fetch('/api/checkout', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ productId, email: champEmail.value }),
+            body: JSON.stringify({
+              productId,
+              email: champEmail.value,
+              waiveWithdrawal: consentement.checked,
+            }),
           });
 
           if (!reponse.ok) throw new Error('Paiement indisponible');
