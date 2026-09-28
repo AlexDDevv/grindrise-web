@@ -148,6 +148,36 @@ aws s3 ls --recursive --profile ovh-admin --endpoint-url "$ENDPOINT" \
 
 ## 5. Test de restauration — une fois par trimestre
 
+### Depuis le serveur (le plus simple)
+
+Aucun identifiant à avoir sur sa machine : le container porte déjà la clé et le
+binaire. La base restaurée est écrite à côté, la production n'est pas touchée.
+
+```bash
+ssh grindrise
+C=$(sudo docker ps -q --filter name=grindrise-web | head -1)
+
+# Ce que le bucket contient
+sudo docker exec "$C" litestream ltx -config /etc/litestream.yml -level all /data/orders.db
+
+# Restauration dans un fichier temporaire, puis contrôle
+sudo docker exec "$C" litestream restore -config /etc/litestream.yml -o /tmp/verif.db /data/orders.db
+sudo docker exec "$C" node -e "
+const {DatabaseSync}=require('node:sqlite');
+const d=new DatabaseSync('/tmp/verif.db',{readOnly:true});
+const un=(sql)=>Object.values(d.prepare(sql).get())[0];
+console.log('intégrité :', un('PRAGMA integrity_check'));
+console.log('commandes :', un('SELECT count(*) FROM orders'));
+console.log('journal   :', un('SELECT count(*) FROM order_events'), 'dernier :', un('SELECT max(created_at) FROM order_events'));
+"
+sudo docker exec "$C" rm -f /tmp/verif.db
+```
+
+Le dernier événement doit correspondre à la dernière activité du site. Vérifié
+le 2026-09-27 : 4 commandes et 21 événements restaurés à l'identique.
+
+### Depuis sa machine (utile si le serveur est perdu)
+
 Une sauvegarde jamais restaurée n'est pas une sauvegarde. Depuis ta machine,
 avec le binaire Litestream (même version que le Dockerfile) :
 
