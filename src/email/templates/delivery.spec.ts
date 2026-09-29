@@ -4,6 +4,8 @@ const unEbook = {
   productName: 'Le corps qui tient',
   links: [{ title: 'Le corps qui tient', url: 'https://exemple.fr/api/download/abc.def' }],
   ttlDays: 7,
+  maxUses: 5,
+  baseUrl: 'https://exemple.fr',
 };
 
 const pack = {
@@ -13,6 +15,8 @@ const pack = {
     { title: 'Ce que l’assiette construit', url: 'https://exemple.fr/api/download/deux.bbb' },
   ],
   ttlDays: 7,
+  maxUses: 5,
+  baseUrl: 'https://exemple.fr',
 };
 
 describe('renderDeliveryEmail', () => {
@@ -47,6 +51,22 @@ describe('renderDeliveryEmail', () => {
   it('nomme le produit dans le sujet, au bon nombre', () => {
     expect(renderDeliveryEmail(unEbook).subject).toBe('Votre ebook : Le corps qui tient');
     expect(renderDeliveryEmail(pack).subject).toBe('Vos ebooks : Les deux ebooks');
+  });
+
+  it('renvoie vers les pages légales du site', () => {
+    // Le pied de l'email doit rester opposable : les liens suivent l'URL
+    // publique configurée, jamais un domaine écrit en dur.
+    const { html, text } = renderDeliveryEmail(unEbook);
+
+    expect(html).toContain('https://exemple.fr/legal/cgv');
+    expect(text).toContain('https://exemple.fr/legal/mentions-legales');
+  });
+
+  it('annonce le quota de téléchargements', () => {
+    const { html, text } = renderDeliveryEmail(unEbook);
+
+    expect(html).toContain('5 téléchargements');
+    expect(text).toContain('5 téléchargements');
   });
 
   it('annonce la durée de validité des liens', () => {

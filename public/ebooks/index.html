@@ -1,123 +1,163 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Ebooks Grindrise</title>
-  </head>
-  <body>
-    <!-- Page volontairement non designée : le design est le chantier suivant,
-         une fois le flow de paiement prouvé de bout en bout.
-         Les prix affichés ici sont indicatifs : le serveur facture toujours
-         ceux de src/catalog/catalog.ts. Les garder synchronisés à la main est
-         assumé tant que le catalogue tient en trois offres. -->
-    <h1>Les ebooks Grindrise</h1>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ebooks — GrindRise</title>
+<meta name="description" content="Deux ebooks PDF : ce que la science sait de l’activité physique, et les fondamentaux de la nutrition pour qui s’entraîne.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#120f0d">
+<link rel="preload" href="/fonts/grenze-700.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/plex-sans-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/styles.css">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="GrindRise">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:title" content="Ebooks — GrindRise">
+<meta property="og:description" content="Deux ebooks PDF : ce que la science sait de l’activité physique, et les fondamentaux de la nutrition pour qui s’entraîne.">
+<meta property="og:url" content="https://grindrise.fr/ebooks">
+<meta property="og:image" content="https://grindrise.fr/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="GrindRise — deux ebooks sur l’entraînement et la nutrition">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+<body class="fx-halo">
 
-    <!-- La page de paiement PayPlug ne demande pas l’email : c’est ici qu’on le
-         collecte, et c’est là que partiront les liens de téléchargement. -->
-    <form id="achat">
-      <p>
-        <label for="email">Email de réception</label><br />
-        <input
-          id="email"
-          name="email"
-          type="email"
-          autocomplete="email"
-          required
-          maxlength="255"
-          size="32"
-        />
-      </p>
+<a class="skip-link" href="#contenu">Aller au contenu</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="GrindRise, accueil"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><path d="M50 3 L93 26.5 L93 73.5 L50 97 L7 73.5 L7 26.5 Z" fill="none" stroke="currentColor" stroke-width="7"/></svg><span>GRINDRISE</span></a>
+    <nav class="site-nav" aria-label="Principale"><a href="/ebooks" aria-current="page">Ebooks</a></nav>
+  </div>
+</header>
+<main id="contenu" class="wrap">
+  <section class="intro reveal" aria-labelledby="titre">
+    <span class="eyebrow">Deux ebooks · PDF</span>
+    <h1 id="titre" class="page-title">S’entraîner et manger en connaissance de cause</h1>
+    <p class="lede">Ce que la recherche établit sur l’activité physique et la nutrition, expliqué clairement. Pas de programme miracle, pas de régime.</p>
+  </section>
 
-      <h2>Le corps qui tient</h2>
-      <p>Ce que la science sait vraiment sur l’activité physique</p>
-      <p>
-        Pourquoi bouger vraiment change tout : les mécanismes, les chiffres de mortalité et
-        la psychologie de l’habitude, sans incantation ni programme tout fait.
-      </p>
-      <p><strong>9,90 €</strong></p>
-      <p><button type="submit" name="productId" value="corps-qui-tient">Acheter</button></p>
+  <!-- Markup protégé : un seul formulaire (le script lit le bouton cliqué via
+       `submitter`), les trois boutons avec leur productId, la case de
+       consentement obligatoire, et le <p id="erreur"> pour les échecs.
+       Les prix affichés doivent rester égaux à ceux de src/catalog/catalog.ts :
+       un test les compare. -->
+  <form id="achat" method="post">
+    <section class="step" aria-labelledby="etape-1">
+      <h2 id="etape-1" class="section-title"><span class="eyebrow">01</span>Ton adresse</h2>
+      <div class="step__body">
+        <div class="field">
+          <label for="email">Adresse email</label>
+          <input id="email" name="email" type="email" required maxlength="255" autocomplete="email" inputmode="email" aria-describedby="email-note">
+          <p id="email-note" class="note note--plain">Les liens de téléchargement y arrivent dans la minute. C’est la seule donnée demandée.</p>
+        </div>
+        <!-- Obligatoire : sans cet accord exprès recueilli AVANT le paiement,
+             l’exception au droit de rétractation des contenus numériques ne
+             s’applique pas (article L221-28 13° du Code de la consommation).
+             Le serveur refuse la commande si la case n’est pas cochée. -->
+        <div class="consent">
+          <input type="checkbox" id="consentement" required>
+          <label for="consentement">J’accepte les <a href="/legal/cgv" target="_blank" rel="noopener">conditions de vente<span class="visually-hidden"> (nouvel onglet)</span></a> et je renonce à mon droit de rétractation dès l’accès au fichier.</label>
+        </div>
+      </div>
+    </section>
 
-      <h2>Ce que l’assiette construit</h2>
-      <p>Les fondamentaux de la nutrition pour qui s’entraîne</p>
-      <p>
-        Les macronutriments, l’équilibre énergétique et les mythes qui ont la vie dure, sans
-        régime ni chiffre magique.
-      </p>
-      <p><strong>9,90 €</strong></p>
-      <p><button type="submit" name="productId" value="assiette">Acheter</button></p>
+    <section class="step" aria-labelledby="etape-2">
+      <h2 id="etape-2" class="section-title"><span class="eyebrow">02</span>Ton choix</h2>
+      <div class="step__body">
+        <ul class="offers">
+          <li class="offer">
+            <h3>Le corps qui tient</h3>
+            <p class="offer__subtitle">Ce que la science sait vraiment sur l’activité physique</p>
+            <p class="offer__desc">Pourquoi bouger vraiment change tout : les mécanismes, les chiffres de mortalité et la psychologie de l’habitude, sans incantation ni programme tout fait.</p>
+            <div class="offer__buy"><span class="price">9,90 €</span><button class="btn" type="submit" name="productId" value="corps-qui-tient">Acheter</button></div>
+          </li>
+          <li class="offer">
+            <h3>Ce que l’assiette construit</h3>
+            <p class="offer__subtitle">Les fondamentaux de la nutrition pour qui s’entraîne</p>
+            <p class="offer__desc">Les macronutriments, l’équilibre énergétique et les mythes qui ont la vie dure, sans régime ni chiffre magique.</p>
+            <div class="offer__buy"><span class="price">9,90 €</span><button class="btn" type="submit" name="productId" value="assiette">Acheter</button></div>
+          </li>
+          <li class="offer">
+            <h3>Les deux ebooks</h3>
+            <p class="offer__subtitle">L’entraînement et la nutrition, les deux piliers</p>
+            <p class="offer__desc">Les deux volumes ensemble, pour 14,90 € au lieu de 19,80 €.</p>
+            <div class="offer__buy"><span class="price">14,90 €</span><button class="btn" type="submit" name="productId" value="pack-complet">Acheter</button></div>
+          </li>
+        </ul>
+        <p id="erreur" role="alert" hidden></p>
+        <p class="note checkout-note"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><rect x="2.5" y="7" width="11" height="8" fill="currentColor"/><path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Au clic sur « Acheter », tu passes sur la page de paiement sécurisé de PayPlug, notre prestataire. Elle est sur fond clair : c’est normal. Tu reviens ici une fois le paiement fait.</span></p>
+      </div>
+    </section>
+  </form>
 
-      <h2>Les deux ebooks</h2>
-      <p>L’entraînement et la nutrition, les deux piliers</p>
-      <p>Vous recevez un lien de téléchargement par ebook.</p>
-      <p><strong>14,90 €</strong> au lieu de 19,80 €</p>
-      <p><button type="submit" name="productId" value="pack-complet">Acheter les deux</button></p>
+  <section class="step" aria-labelledby="etape-3">
+    <h2 id="etape-3" class="section-title"><span class="eyebrow">03</span>Ensuite</h2>
+    <ol class="steps-list">
+      <li><span><b>Tu paies chez PayPlug,</b> par carte bancaire, sur une page hébergée par eux.</span></li>
+      <li><span><b>Tu reçois un email dans la minute,</b> avec un lien par ebook.</span></li>
+      <li><span><b>Chaque lien est valable 7 jours,</b> pour 5 téléchargements. Un souci : réponds simplement à l’email.</span></li>
+    </ol>
+  </section>
+</main>
 
-      <!-- Obligatoire : sans cet accord exprès recueilli AVANT le paiement,
-           l’exception au droit de rétractation des contenus numériques ne
-           s’applique pas (article L221-28 13° du Code de la consommation).
-           Le serveur refuse la commande si la case n’est pas cochée. -->
-      <p>
-        <label>
-          <input type="checkbox" id="consentement" required />
-          J’accepte les <a href="/legal/cgv" target="_blank">conditions générales de vente</a>
-          et je demande la livraison immédiate de mon ebook. Je reconnais perdre de ce fait
-          mon droit de rétractation.
-        </label>
-      </p>
-    </form>
+<script>
+  const formulaire = document.getElementById('achat');
+  const champEmail = document.getElementById('email');
+  const consentement = document.getElementById('consentement');
+  const erreur = document.getElementById('erreur');
+  const boutons = formulaire.querySelectorAll('button[type="submit"]');
 
-    <p id="erreur" role="alert" hidden></p>
+  formulaire.addEventListener('submit', async (evenement) => {
+    evenement.preventDefault();
 
-    <footer>
-      <p>
-        <a href="/legal/mentions-legales">Mentions légales</a> ·
-        <a href="/legal/cgv">Conditions générales de vente</a> ·
-        <a href="/legal/confidentialite">Politique de confidentialité</a>
-      </p>
-    </footer>
+    // `submitter` identifie le bouton cliqué, donc l'offre choisie. Le
+    // serveur ne fait confiance qu'à cet identifiant : le prix, lui, vient
+    // toujours du catalogue.
+    const productId = evenement.submitter && evenement.submitter.value;
+    if (!productId) return;
 
-    <script>
-      const formulaire = document.getElementById('achat');
-      const champEmail = document.getElementById('email');
-      const consentement = document.getElementById('consentement');
-      const erreur = document.getElementById('erreur');
-      const boutons = formulaire.querySelectorAll('button[type="submit"]');
+    // Désactiver pendant l'appel : un double clic créerait deux paiements
+    // PayPlug, donc deux commandes pour un seul acheteur.
+    boutons.forEach((bouton) => (bouton.disabled = true));
+    erreur.hidden = true;
 
-      formulaire.addEventListener('submit', async (evenement) => {
-        evenement.preventDefault();
-
-        // `submitter` identifie le bouton cliqué, donc l'offre choisie. Le
-        // serveur ne fait confiance qu'à cet identifiant : le prix, lui, vient
-        // toujours du catalogue.
-        const productId = evenement.submitter && evenement.submitter.value;
-        if (!productId) return;
-
-        // Désactiver pendant l'appel : un double clic créerait deux paiements
-        // PayPlug, donc deux commandes pour un seul acheteur.
-        boutons.forEach((bouton) => (bouton.disabled = true));
-        erreur.hidden = true;
-
-        try {
-          const reponse = await fetch('/api/checkout', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({
-              productId,
-              email: champEmail.value,
-              waiveWithdrawal: consentement.checked,
-            }),
-          });
-
-          if (!reponse.ok) throw new Error('Paiement indisponible');
-          const { url } = await reponse.json();
-          window.location.assign(url);
-        } catch {
-          erreur.textContent = 'Le paiement est momentanément indisponible. Réessayez.';
-          erreur.hidden = false;
-          boutons.forEach((bouton) => (bouton.disabled = false));
-        }
+    try {
+      const reponse = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          productId,
+          email: champEmail.value,
+          waiveWithdrawal: consentement.checked,
+        }),
       });
-    </script>
-  </body>
+
+      if (!reponse.ok) throw new Error('Paiement indisponible');
+      const { url } = await reponse.json();
+      window.location.assign(url);
+    } catch {
+      erreur.textContent = 'Le paiement est momentanément indisponible. Réessayez.';
+      erreur.className = 'alert';
+      erreur.hidden = false;
+      boutons.forEach((bouton) => (bouton.disabled = false));
+    }
+  });
+</script>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <nav aria-label="Informations légales">
+      <a href="/legal/mentions-legales">Mentions légales</a>
+      <a href="/legal/cgv">Conditions de vente</a>
+      <a href="/legal/confidentialite">Confidentialité</a>
+    </nav>
+    <p>GrindRise · aucun cookie, aucun traceur.</p>
+  </div>
+</footer>
+</body>
 </html>

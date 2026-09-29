@@ -1,14 +1,49 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Paiement annulé</title>
-  </head>
-  <body>
-    <!-- Page volontairement non designée : le design est le chantier suivant,
-         une fois le flow de paiement prouvé de bout en bout. -->
-    <h1>Paiement annulé</h1>
-    <p>Retour après abandon du paiement.</p>
-  </body>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paiement annulé — GrindRise</title>
+<meta name="description" content="Le paiement a été interrompu. Aucun montant n’a été débité.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#120f0d">
+<link rel="preload" href="/fonts/grenze-700.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/plex-sans-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/styles.css">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+</head>
+<body class="fx-halo">
+
+<a class="skip-link" href="#contenu">Aller au contenu</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="GrindRise, accueil"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><path d="M50 3 L93 26.5 L93 73.5 L50 97 L7 73.5 L7 26.5 Z" fill="none" stroke="currentColor" stroke-width="7"/></svg><span>GRINDRISE</span></a>
+    <nav class="site-nav" aria-label="Principale"><a href="/ebooks">Ebooks</a></nav>
+  </div>
+</header>
+<main id="contenu" class="wrap">
+  <section class="status reveal" aria-labelledby="titre">
+    <span class="eyebrow">Paiement interrompu</span>
+    <h1 id="titre" class="page-title">Le paiement n’a pas abouti</h1>
+    <p class="lede">Aucun montant n’a été débité. Si c’était voulu, rien d’autre à faire. Si quelque chose a coincé, tu peux reprendre là où tu en étais.</p>
+    <div class="actions">
+      <a class="btn" href="/ebooks">Revenir aux ebooks <span class="arrow" aria-hidden="true">→</span></a>
+      <a class="btn btn--secondary" href="/">Accueil</a>
+    </div>
+    <p class="note note--plain">Un problème avec la page de paiement ? Écris à <a href="mailto:contact@grindrise.fr">contact@grindrise.fr</a>.</p>
+  </section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <nav aria-label="Informations légales">
+      <a href="/legal/mentions-legales">Mentions légales</a>
+      <a href="/legal/cgv">Conditions de vente</a>
+      <a href="/legal/confidentialite">Confidentialité</a>
+    </nav>
+    <p>GrindRise · aucun cookie, aucun traceur.</p>
+  </div>
+</footer>
+</body>
 </html>

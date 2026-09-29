@@ -53,6 +53,8 @@ export class DeliveryService {
       productName: produit.name,
       links,
       ttlDays: config.downloadTokenTtlDays,
+      maxUses: config.downloadMaxUses,
+      baseUrl: config.publicBaseUrl,
     });
 
     try {

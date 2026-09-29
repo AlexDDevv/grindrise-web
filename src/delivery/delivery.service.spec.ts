@@ -12,6 +12,7 @@ const config = {
   publicBaseUrl: 'https://exemple.fr',
   downloadTokenSecret: 'secret-de-test',
   downloadTokenTtlDays: 7,
+  downloadMaxUses: 5,
 } as AppConfig;
 
 /** Le pack : deux fichiers, donc deux liens à vérifier. */

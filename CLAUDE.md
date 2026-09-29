@@ -109,7 +109,13 @@ pas le shim Volta.
   tout ce qui touche au paiement (flow, tests, bascule en live).
 - `spec/2026-09-22-sauvegarde-litestream.md` : sauvegarde, rétention, restauration.
 - `docs/` n'est pas versionné (notes produit).
-- Les pages de `public/` sont des placeholders non designés. Le tunnel de vente
-  est servi sous `/ebooks` (`public/ebooks/`), la racine est réservée à la
-  future landing GrindRise : `/success` et `/cancel` n'existent plus, les URL
-  de retour envoyées à PayPlug sont `/ebooks/success` et `/ebooks/cancel`.
+- Les pages de `public/` portent la DA GrindRise (piste « Le registre »), venue
+  du projet de design claude.ai. `public/styles.css` est la feuille unique :
+  tokens en tête, puis primitives (`.btn`, `.card`, `.prose`, `.offer`…) et
+  effets CSS (`.fx-halo`, `.fx-grain`, `.reveal`). Aucun build, aucune requête
+  tierce, polices auto-hébergées dans `public/fonts/`. Le gabarit d'email suit
+  la même DA, en tableaux et styles en ligne.
+- Le tunnel de vente est servi sous `/ebooks` (`public/ebooks/`), la racine est
+  réservée à la future landing GrindRise : `/success` et `/cancel` n'existent
+  plus, les URL de retour envoyées à PayPlug sont `/ebooks/success` et
+  `/ebooks/cancel`. Les pages légales sont sous `/legal/`.

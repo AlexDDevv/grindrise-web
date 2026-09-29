@@ -1,0 +1,332 @@
+/* ==========================================================================
+   GRINDRISE — feuille de style unique (grindrise.fr)
+   Piste retenue : « Le registre ». CSS pur, aucun build, aucune ressource tierce.
+   Sommaire
+     1. Polices auto-hébergées
+     2. Tokens (couleurs, typo, espacements, rayons, ombres, durées)
+     3. Base et accessibilité
+     4. Primitives : conteneur, en-tête, marque, titres, boutons, carte, note, pied
+     5. Effets (halo, grain, apparition) — tous neutralisés en mouvement réduit
+     6. Formulaire d'achat (/ebooks)
+     7. Pages d'état (accueil provisoire, succès, annulation)
+     8. Pages légales (prose, sommaire, tableau)
+     9. Préférences utilisateur (mouvement réduit, contraste forcé, impression)
+   ========================================================================== */
+
+/* 1. POLICES — sous-ensemble latin (couvre é è à ç œ € ’ « »), licence SIL OFL 1.1
+   Chemins relatifs à ce fichier : /fonts/*.woff2 */
+@font-face{font-family:"Grenze";font-style:normal;font-weight:700;font-display:swap;src:url("fonts/grenze-700.woff2") format("woff2")}
+@font-face{font-family:"IBM Plex Sans";font-style:normal;font-weight:400;font-display:swap;src:url("fonts/plex-sans-400.woff2") format("woff2")}
+@font-face{font-family:"IBM Plex Sans";font-style:normal;font-weight:600;font-display:swap;src:url("fonts/plex-sans-600.woff2") format("woff2")}
+@font-face{font-family:"JetBrains Mono";font-style:normal;font-weight:500;font-display:swap;src:url("fonts/jetbrains-mono-500.woff2") format("woff2")}
+
+/* 2. TOKENS ================================================================ */
+:root{
+  /* Fonds — charbon / onyx */
+  --c-bg:#120f0d;            /* fond de page */
+  --c-bg-deep:#0d0b09;       /* creux : champs, encarts */
+  --c-surface:#1b1514;       /* carte, bloc de consentement */
+  --c-surface-2:#241c1a;     /* survol de carte */
+  /* Filets */
+  --c-line:rgba(243,231,211,.14);        /* séparateur discret (décoratif) */
+  --c-line-strong:rgba(243,231,211,.28); /* filet de structure */
+  --c-field:#7a7168;                     /* bord de champ : 4,1:1 sur --c-bg-deep (AA composants) */
+  /* Textes — ratios mesurés sur --c-bg */
+  --c-ink:#f3e7d3;           /* titres            15,6:1 */
+  --c-text:#ddd5c8;          /* texte courant     13,1:1 */
+  --c-muted:#a89e90;         /* texte secondaire   7,2:1 (6,8:1 sur --c-surface) — ne pas descendre plus bas */
+  /* Accent bronze / or */
+  --c-gold:#c08a34;          /* fond de bouton ; texte seulement ≥ 18 px (6,3:1) */
+  --c-gold-light:#e0b26a;    /* liens, focus, étiquettes (9,8:1) */
+  --c-gold-ink:#1c1206;      /* texte posé sur --c-gold (6,1:1) */
+  --c-gold-on-light:#8a5c14; /* or utilisable sur fond clair (5,2:1 sur #f6f2ea) */
+  /* Secondaires — violet et rouge sombres, pour halos et alertes seulement */
+  --c-plum:#3a2034;
+  --c-ember:#6e2a1f;
+  --c-alert:#e8988a;         /* texte d'erreur (8,5:1) */
+
+  /* Typographie */
+  --f-display:"Grenze",Georgia,"Times New Roman",serif;
+  --f-text:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --fs-xs:.75rem;    /* 12 — étiquettes mono en capitales uniquement */
+  --fs-sm:.875rem;   /* 14 — notes */
+  --fs-base:1.0625rem; /* 17 — texte courant */
+  --fs-md:1.25rem;   /* 20 */
+  --fs-lg:1.625rem;  /* 26 — titres de carte */
+  --fs-xl:2.125rem;  /* 34 — titres de section */
+  --fs-2xl:clamp(2.375rem,6.5vw + .5rem,4rem); /* 38 → 64 — titre de page */
+  --lh-tight:1.08;
+  --lh-snug:1.25;
+  --lh-body:1.65;
+  --tracking-label:.18em;
+  --measure:68ch;    /* longueur de ligne des textes longs (65–75 car.) */
+
+  /* Espacements — échelle 4 px */
+  --sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-5:24px;
+  --sp-6:32px;--sp-7:48px;--sp-8:72px;--sp-9:112px;
+  --gutter:20px;     /* marge latérale mobile, élargie plus bas */
+
+  /* Formes */
+  --r-0:0;
+  --r-1:2px;
+  --cut:10px;        /* coin coupé des boutons (signature DA) */
+  --tap:44px;        /* cible tactile minimale */
+  --tap-lg:54px;
+
+  /* Ombres et lueurs */
+  --sh-card:0 1px 0 rgba(243,231,211,.04) inset,0 18px 40px -24px rgba(0,0,0,.8);
+  --sh-glow:0 0 0 1px rgba(224,178,106,.35),0 10px 30px -12px rgba(192,138,52,.45);
+
+  /* Mouvement */
+  --d-fast:140ms;
+  --d-base:220ms;
+  --d-slow:520ms;
+  --ease:cubic-bezier(.2,.7,.2,1);
+
+  color-scheme:dark;
+}
+@media (min-width:720px){:root{--gutter:32px}}
+@media (min-width:1100px){:root{--gutter:48px}}
+
+/* 3. BASE ================================================================== */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;background:var(--c-bg)}
+body{margin:0;min-height:100vh;display:flex;flex-direction:column;background:var(--c-bg);color:var(--c-text);font:400 var(--fs-base)/var(--lh-body) var(--f-text);-webkit-font-smoothing:antialiased}
+main{flex:1}
+img,svg{display:block;max-width:100%}
+h1,h2,h3,h4{margin:0;color:var(--c-ink);font-family:var(--f-display);font-weight:700;line-height:var(--lh-snug);text-wrap:balance}
+p{margin:0;text-wrap:pretty}
+a{color:var(--c-gold-light);text-decoration-thickness:1px;text-underline-offset:3px;transition:color var(--d-fast) var(--ease)}
+a:hover{color:var(--c-ink);text-decoration-thickness:2px}
+strong,b{font-weight:600;color:var(--c-ink)}
+[hidden]{display:none!important}
+::selection{background:var(--c-gold);color:var(--c-gold-ink)}
+/* Focus clavier : toujours visible, jamais retiré */
+:focus-visible{outline:2px solid var(--c-gold-light);outline-offset:3px}
+:focus:not(:focus-visible){outline:none}
+.visually-hidden{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+.skip-link{position:absolute;left:var(--sp-3);top:-100px;z-index:10;padding:var(--sp-3) var(--sp-4);background:var(--c-gold);color:var(--c-gold-ink);font-weight:600;text-decoration:none}
+.skip-link:focus{top:var(--sp-3)}
+
+/* 4. PRIMITIVES ============================================================ */
+
+/* Conteneurs */
+.wrap{width:100%;max-width:960px;margin-inline:auto;padding-inline:var(--gutter)}
+.wrap--narrow{max-width:720px}
+
+/* En-tête du site */
+.site-header{border-bottom:1px solid var(--c-line)}
+.site-header .wrap{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-4);min-height:72px}
+.site-nav{display:flex;gap:var(--sp-5)}
+.site-nav a{display:inline-flex;align-items:center;min-height:var(--tap);color:var(--c-text);text-decoration:none;font-weight:600;font-size:var(--fs-sm)}
+.site-nav a:hover{color:var(--c-ink)}
+.site-nav a[aria-current="page"]{color:var(--c-gold-light)}
+
+/* Marque : hexagone gravé + mot GRINDRISE. currentColor → fonctionne sur fond clair
+   en posant simplement color:#161110 sur le parent. */
+.brand{display:inline-flex;align-items:center;gap:10px;min-height:var(--tap);color:var(--c-ink);text-decoration:none}
+.brand svg{width:28px;height:28px;flex:none}
+.brand span{font:700 1.25rem/1 var(--f-display);letter-spacing:.1em}
+.brand:hover{color:var(--c-ink)}
+.brand--stacked{flex-direction:column;gap:var(--sp-4)}
+.brand--stacked svg{width:72px;height:72px}
+.brand--stacked span{font-size:1.75rem;letter-spacing:.14em}
+
+/* Étiquette mono (sur-titre, numéro d'étape) */
+.eyebrow{display:block;font:500 var(--fs-xs)/1.3 var(--f-mono);letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--c-gold-light)}
+
+/* Titres */
+.page-title{font-size:var(--fs-2xl);line-height:var(--lh-tight);letter-spacing:-.005em}
+.section-title{display:flex;align-items:baseline;gap:var(--sp-3);font-size:var(--fs-lg)}
+.section-title .eyebrow{flex:none}
+.lede{max-width:34em;font-size:var(--fs-md);line-height:1.55;color:var(--c-muted)}
+
+/* Bloc d'introduction de page */
+.intro{display:grid;gap:var(--sp-4);padding-block:var(--sp-7) var(--sp-6)}
+@media (min-width:720px){.intro{padding-block:var(--sp-8) var(--sp-7)}}
+
+/* Boutons — .btn = principal (or plein), .btn--secondary = contour */
+.btn{--btn-bg:var(--c-gold);--btn-fg:var(--c-gold-ink);
+  display:inline-flex;align-items:center;justify-content:center;gap:var(--sp-2);
+  min-height:var(--tap-lg);min-width:var(--tap);padding:0 var(--sp-5);
+  border:0;border-radius:var(--r-0);background:var(--btn-bg);color:var(--btn-fg);
+  font:600 1rem/1 var(--f-text);letter-spacing:.01em;text-decoration:none;cursor:pointer;
+  clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut));
+  transition:background-color var(--d-fast) var(--ease),color var(--d-fast) var(--ease),transform var(--d-fast) var(--ease)}
+.btn:hover{--btn-bg:var(--c-gold-light);color:var(--btn-fg);text-decoration:none}
+.btn:active{transform:translateY(1px)}
+/* le coin coupé masquerait le contour de focus : on le retire au focus clavier */
+.btn:focus-visible{clip-path:none;outline:2px solid var(--c-ink);outline-offset:3px}
+.btn:disabled,.btn[aria-disabled="true"]{--btn-bg:#5b4f3f;--btn-fg:#e8dfd0;cursor:progress}
+.btn--secondary{--btn-bg:transparent;--btn-fg:var(--c-ink);box-shadow:inset 0 0 0 1px var(--c-gold);clip-path:none}
+.btn--secondary:hover{--btn-bg:rgba(192,138,52,.14);--btn-fg:var(--c-ink)}
+.btn--block{width:100%}
+.btn .arrow{transition:transform var(--d-base) var(--ease)}
+.btn:hover .arrow{transform:translateX(3px)}
+
+/* Carte */
+.card{display:grid;gap:var(--sp-3);padding:var(--sp-5);background:var(--c-surface);border:1px solid var(--c-line-strong);box-shadow:var(--sh-card);transition:background-color var(--d-base) var(--ease),border-color var(--d-base) var(--ease)}
+.card:hover{background:var(--c-surface-2)}
+.card--accent{border-color:var(--c-gold)}
+
+/* Note discrète, avec pictogramme facultatif en premier enfant */
+.note{display:grid;grid-template-columns:auto 1fr;gap:var(--sp-3);align-items:start;font-size:var(--fs-sm);line-height:1.55;color:var(--c-muted)}
+.note>svg{width:16px;height:16px;margin-top:3px;color:var(--c-gold-light)}
+.note--plain{display:block}
+
+/* Alerte (erreur de paiement, message important) */
+.alert{padding:var(--sp-3) var(--sp-4);border:1px solid var(--c-alert);border-left-width:4px;background:rgba(110,42,31,.28);color:var(--c-alert);font-size:var(--fs-sm)}
+
+/* Liste d'étapes en chiffres romains */
+.steps-list{list-style:none;margin:0;padding:0;display:grid;gap:var(--sp-4);counter-reset:n}
+.steps-list li{display:grid;grid-template-columns:36px 1fr;gap:var(--sp-3);color:var(--c-muted)}
+.steps-list li::before{counter-increment:n;content:counter(n,upper-roman);font:700 1.15rem/1.5 var(--f-display);color:var(--c-gold-light)}
+
+/* Pied de page — liens légaux obligatoires sur toutes les pages */
+.site-footer{margin-top:var(--sp-8);border-top:1px solid var(--c-line)}
+.site-footer .wrap{display:grid;gap:var(--sp-3);padding-block:var(--sp-6) var(--sp-7);font-size:var(--fs-sm);color:var(--c-muted)}
+.site-footer nav{display:flex;flex-wrap:wrap;gap:0 var(--sp-5)}
+.site-footer nav a{display:inline-flex;align-items:center;min-height:var(--tap);color:var(--c-text)}
+.site-footer nav a:hover{color:var(--c-ink)}
+@media (min-width:720px){.site-footer .wrap{grid-template-columns:1fr auto;align-items:center}}
+
+/* 5. EFFETS ================================================================ */
+
+/* Halo : lueur bronze et prune en tête de page. Ajouter .fx-halo sur <body>. */
+.fx-halo{background:
+  radial-gradient(60rem 28rem at 78% -8rem,rgba(192,138,52,.16),transparent 70%),
+  radial-gradient(44rem 26rem at 8% -6rem,rgba(58,32,52,.55),transparent 70%),
+  var(--c-bg) no-repeat}
+/* Grain : bruit SVG en data-URI (aucune requête), très léger. Ajouter .fx-grain sur <body>. */
+.fx-grain::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.06;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 .92 0 0 0 0 .83 0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.fx-grain{position:relative;isolation:isolate}
+/* Filet gravé : double trait bronze, pour séparer une section majeure */
+.rule-engraved{height:5px;border:0;margin:0;border-top:1px solid var(--c-gold);border-bottom:1px solid var(--c-line-strong)}
+/* Apparition douce, une seule fois, à l'arrivée sur la page */
+.reveal{animation:gr-rise var(--d-slow) var(--ease) both}
+.reveal--2{animation-delay:80ms}
+.reveal--3{animation-delay:160ms}
+@keyframes gr-rise{from{opacity:0;transform:translateY(10px)}}
+
+/* 6. FORMULAIRE D'ACHAT (/ebooks) ========================================= */
+.step{display:grid;gap:var(--sp-5);padding-block:var(--sp-6);border-top:1px solid var(--c-line)}
+.step__body{display:grid;gap:var(--sp-4);min-width:0}
+@media (min-width:720px){
+  .step{grid-template-columns:180px minmax(0,1fr);gap:var(--sp-6);padding-block:var(--sp-7)}
+  .step>.section-title{flex-direction:column;gap:var(--sp-2)}
+}
+
+.field{display:grid;gap:var(--sp-2)}
+.field label{font-weight:600;color:var(--c-ink)}
+.field .note{font-size:var(--fs-sm)}
+.input,#email{width:100%;min-height:var(--tap-lg);padding:0 var(--sp-4);background:var(--c-bg-deep);border:1px solid var(--c-field);border-radius:var(--r-0);color:#fff;font:400 1.0625rem/1.2 var(--f-text);transition:border-color var(--d-fast) var(--ease)}
+.input:hover,#email:hover{border-color:var(--c-muted)}
+.input:focus-visible,#email:focus-visible{outline:2px solid var(--c-gold-light);outline-offset:0;border-color:var(--c-gold-light)}
+#email:user-invalid{border-color:var(--c-alert)}
+
+/* Consentement : une case, jamais pré-cochée, bien visible. Toute la zone est cliquable. */
+.consent{display:grid;grid-template-columns:28px 1fr;gap:var(--sp-3);align-items:start;padding:var(--sp-4);background:var(--c-surface);border:1px solid var(--c-line-strong);transition:border-color var(--d-fast) var(--ease)}
+.consent:hover{border-color:var(--c-muted)}
+.consent:has(:checked){border-color:var(--c-gold)}
+.consent label{cursor:pointer;color:var(--c-text);font-size:1rem;line-height:1.55}
+#consentement{appearance:none;-webkit-appearance:none;margin:0;width:28px;height:28px;border:2px solid var(--c-gold);border-radius:var(--r-0);background:var(--c-bg-deep);cursor:pointer;transition:background-color var(--d-fast) var(--ease)}
+/* agrandit la cible tactile à 44 px sans changer le dessin */
+#consentement{box-shadow:0 0 0 8px transparent}
+#consentement:checked{background:var(--c-gold) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5' fill='none' stroke='%231c1206' stroke-width='3'/%3E%3C/svg%3E") center/20px no-repeat}
+#consentement:focus-visible{outline:2px solid var(--c-gold-light);outline-offset:3px}
+
+/* Offres, en lignes réglées comme une table des matières */
+.offers{list-style:none;margin:0;padding:0;border-top:1px solid var(--c-line-strong)}
+.offer{display:grid;gap:var(--sp-3);padding-block:var(--sp-5);border-bottom:1px solid var(--c-line-strong)}
+.offer h3{font-size:var(--fs-lg);line-height:1.15}
+.offer__subtitle{font-weight:600;color:var(--c-text)}
+.offer__desc{color:var(--c-muted)}
+.offer__buy{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-4);padding-top:var(--sp-2)}
+.offer__buy .btn{min-width:150px}
+.offer__tag{display:inline-block;margin-left:var(--sp-2);padding:4px 6px;border:1px solid var(--c-gold);font:500 .6875rem/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--c-gold-light);vertical-align:.35em}
+.price{font:600 1.5rem/1 var(--f-text);color:#fff;font-variant-numeric:tabular-nums;white-space:nowrap}
+.price s{margin-left:var(--sp-2);font-size:.95rem;font-weight:400;color:var(--c-muted)}
+@media (min-width:720px){
+  .offer{grid-template-columns:minmax(0,1fr) auto;column-gap:var(--sp-6);align-items:end}
+  .offer__buy{grid-column:2;grid-row:1/4;flex-direction:column;align-items:flex-end;padding:0}
+}
+#erreur{margin-top:var(--sp-4)}
+.checkout-note{padding-top:var(--sp-4)}
+
+/* 7. PAGES D'ÉTAT ========================================================== */
+.status{display:grid;gap:var(--sp-5);padding-block:var(--sp-8) var(--sp-7);max-width:40rem}
+.status__mark{width:56px;height:56px;color:var(--c-gold-light)}
+.status .actions{display:flex;flex-wrap:wrap;gap:var(--sp-3);padding-top:var(--sp-2)}
+.home{display:grid;place-items:center;text-align:center;min-height:calc(100vh - 160px);padding-block:var(--sp-8)}
+.home__inner{display:grid;justify-items:center;gap:var(--sp-5);max-width:34rem}
+.home .brand--stacked{margin-bottom:var(--sp-4)}
+.home .lede{margin-inline:auto}
+
+/* 8. PAGES LÉGALES ========================================================= */
+.legal{display:grid;gap:var(--sp-6);padding-bottom:var(--sp-6)}
+.legal__meta{font-size:var(--fs-sm);color:var(--c-muted)}
+.toc{padding:var(--sp-4) var(--sp-5);border:1px solid var(--c-line-strong);background:var(--c-surface)}
+.toc h2{margin-bottom:var(--sp-2);font:500 var(--fs-xs)/1.3 var(--f-mono);letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--c-gold-light)}
+.toc ol{margin:0;padding:0;list-style:none;display:grid}
+.toc a{display:flex;gap:var(--sp-3);align-items:baseline;min-height:var(--tap);padding-block:10px;color:var(--c-text);text-decoration:none;line-height:1.35;border-bottom:1px solid var(--c-line)}
+.toc li:last-child a{border-bottom:0}
+.toc a:hover{color:var(--c-ink)}
+.toc a span{flex:none;min-width:2.2em;font:500 var(--fs-xs)/1.35 var(--f-mono);color:var(--c-gold-light)}
+@media (min-width:1100px){
+  .legal--toc{grid-template-columns:minmax(0,var(--measure)) 260px;justify-content:space-between;align-items:start}
+  .legal--toc .toc{grid-column:2;grid-row:1;position:sticky;top:var(--sp-5)}
+  .legal--toc .prose{grid-column:1;grid-row:1}
+}
+
+/* Prose : typographie de lecture longue */
+.prose{max-width:var(--measure);font-size:var(--fs-base);line-height:1.7}
+.prose>*+*{margin-top:1em}
+.prose h2{margin-top:2.4em;padding-top:var(--sp-5);border-top:1px solid var(--c-line);font-size:1.625rem;scroll-margin-top:var(--sp-5)}
+.prose h2 .num{display:block;margin-bottom:var(--sp-2);font:500 var(--fs-xs)/1.3 var(--f-mono);letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--c-gold-light)}
+.prose>h2:first-child{margin-top:0;padding-top:0;border-top:0}
+.prose h3{margin-top:1.8em;font:600 1.0625rem/1.4 var(--f-text);color:var(--c-ink)}
+.prose h2+*,.prose h3+*{margin-top:.6em}
+.prose ul,.prose ol{padding-left:1.3em}
+.prose li+li{margin-top:.4em}
+.prose li::marker{color:var(--c-gold-light)}
+.prose address{font-style:normal}
+.prose .callout{padding:var(--sp-4) var(--sp-5);border:1px solid var(--c-gold);background:var(--c-surface);color:var(--c-text)}
+
+/* Tableau (confidentialité) : grille sur écran large, fiches empilées sur mobile.
+   Chaque <td> porte data-label="…" pour l'affichage mobile. */
+.table-wrap{max-width:none}
+.data-table{width:100%;border-collapse:collapse;font-size:var(--fs-sm);line-height:1.5}
+.data-table caption{text-align:left;padding-bottom:var(--sp-3);color:var(--c-muted)}
+.data-table th,.data-table td{text-align:left;vertical-align:top;padding:var(--sp-3) var(--sp-4);border-bottom:1px solid var(--c-line-strong)}
+.data-table thead th{font:500 var(--fs-xs)/1.3 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--c-gold-light);border-bottom-color:var(--c-gold)}
+.data-table tbody th{color:var(--c-ink);font-weight:600}
+@media (max-width:719.98px){
+  .data-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+  .data-table,.data-table tbody,.data-table tr,.data-table th,.data-table td{display:block}
+  .data-table tr{padding:var(--sp-4);margin-bottom:var(--sp-3);background:var(--c-surface);border:1px solid var(--c-line-strong)}
+  .data-table th,.data-table td{padding:0;border:0}
+  .data-table tbody th{font:700 1.2rem/1.3 var(--f-display);margin-bottom:var(--sp-3)}
+  .data-table td+td{margin-top:var(--sp-3)}
+  .data-table td::before{content:attr(data-label);display:block;margin-bottom:2px;font:500 var(--fs-xs)/1.3 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--c-gold-light)}
+}
+
+/* 9. PRÉFÉRENCES =========================================================== */
+/* Mouvement réduit : les animations disparaissent (elles ne ralentissent pas). */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+/* Contraste forcé (Windows) : on rend la case et les boutons au système. */
+@media (forced-colors:active){
+  #consentement{appearance:auto;-webkit-appearance:auto;width:24px;height:24px}
+  .btn{clip-path:none;border:2px solid ButtonText}
+  .fx-grain::before{display:none}
+}
+@media print{
+  body{background:#fff;color:#000}
+  .site-header,.site-footer,.fx-grain::before,.toc{display:none}
+  .prose{max-width:none;color:#000}
+  .prose h2,.prose h3{color:#000}
+  a{color:#000}
+}
