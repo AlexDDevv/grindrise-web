@@ -144,7 +144,7 @@ ${input.links.map(blocEbook).join('\n')}
     'GRINDRISE',
     '=========',
     '',
-    `Paiement confirmé — ${pluriel ? 'tes ebooks sont prêts' : 'ton ebook est prêt'}.`,
+    `Paiement confirmé : ${pluriel ? 'tes ebooks sont prêts' : 'ton ebook est prêt'}.`,
     '',
     `Merci pour ton achat de ${input.productName}.`,
     `Chaque lien est ${validite} :`,
