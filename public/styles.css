@@ -183,13 +183,18 @@ strong,b{font-weight:600;color:var(--c-ink)}
 .steps-list li{display:grid;grid-template-columns:36px 1fr;gap:var(--sp-3);color:var(--c-muted)}
 .steps-list li::before{counter-increment:n;content:counter(n,upper-roman);font:700 1.15rem/1.5 var(--f-display);color:var(--c-gold-light)}
 
-/* Pied de page — liens légaux obligatoires sur toutes les pages */
-.site-footer{margin-top:var(--sp-8);border-top:1px solid var(--c-line)}
-.site-footer .wrap{display:grid;gap:var(--sp-3);padding-block:var(--sp-6) var(--sp-7);font-size:var(--fs-sm);color:var(--c-muted)}
+/* Pied de page — liens légaux obligatoires sur toutes les pages.
+   Sur mobile il s'empile, donc il respire ; à partir de 720 px il tient sur une
+   ligne et prend exactement la hauteur de l'en-tête (72 px), pour fermer la
+   page sans l'allonger. Les liens gardent leurs 44 px de cible tactile. */
+.site-footer{margin-top:var(--sp-6);border-top:1px solid var(--c-line)}
+.site-footer .wrap{display:grid;gap:var(--sp-2);padding-block:var(--sp-4);font-size:var(--fs-sm);color:var(--c-muted)}
 .site-footer nav{display:flex;flex-wrap:wrap;gap:0 var(--sp-5)}
 .site-footer nav a{display:inline-flex;align-items:center;min-height:var(--tap);color:var(--c-text)}
 .site-footer nav a:hover{color:var(--c-ink)}
-@media (min-width:720px){.site-footer .wrap{grid-template-columns:1fr auto;align-items:center}}
+@media (min-width:720px){
+  .site-footer .wrap{grid-template-columns:1fr auto;align-items:center;min-height:72px;padding-block:0}
+}
 
 /* 5. EFFETS ================================================================ */
 
@@ -259,7 +264,10 @@ strong,b{font-weight:600;color:var(--c-ink)}
 .status{display:grid;gap:var(--sp-5);padding-block:var(--sp-8) var(--sp-7);max-width:40rem}
 .status__mark{width:56px;height:56px;color:var(--c-gold-light)}
 .status .actions{display:flex;flex-wrap:wrap;gap:var(--sp-3);padding-top:var(--sp-2)}
-.home{display:grid;place-items:center;text-align:center;min-height:calc(100vh - 160px);padding-block:var(--sp-8)}
+/* `main{flex:1}` dans un `body` en colonne de 100vh remplit déjà la hauteur :
+   un `min-height:calc(100vh - …)` s'y ajouterait et produirait une barre de
+   défilement sur une page qui tient pourtant à l'écran. */
+.home{display:grid;place-items:center;text-align:center;padding-block:var(--sp-7)}
 .home__inner{display:grid;justify-items:center;gap:var(--sp-5);max-width:34rem}
 .home .brand--stacked{margin-bottom:var(--sp-4)}
 .home .lede{margin-inline:auto}
