@@ -13,6 +13,9 @@ import type { EmailProvider } from './email/email-provider';
 import { notificationRoutes } from './notification/notification.routes';
 import type { PayPlugClient } from './payment/payplug.client';
 
+/** Ressources dont le contenu est figé tant que leur nom ne change pas. */
+const IMMUABLES = /\.(woff2|png|jpg|svg)$/;
+
 export type ServerDeps = {
   config: AppConfig;
   db: DatabaseSync;
@@ -38,6 +41,18 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
   // donc vers la racine du projet.
   await app.register(fastifyStatic, {
     root: join(__dirname, '..', 'public'),
+  });
+
+  // Les polices et les icônes ne changent jamais sous le même nom : sans ce
+  // cache, le navigateur les revalide à chaque page, soit quatre allers-retours
+  // réseau pour rien. Le reste — HTML et feuille de style — garde la
+  // revalidation par défaut : leur contenu change à chaque déploiement, et
+  // aucun nom de fichier ne porte d'empreinte qui permettrait de les figer.
+  app.addHook('onSend', async (request, reply, payload) => {
+    if (IMMUABLES.test(request.url.split('?')[0])) {
+      reply.header('cache-control', 'public, max-age=31536000, immutable');
+    }
+    return payload;
   });
 
   app.get('/health', async (_request, reply) => {

@@ -107,6 +107,24 @@ describe('buildServer', () => {
     await app.close();
   });
 
+  it('met en cache long les polices et les icônes, jamais les pages', async () => {
+    // Sans ce cache, chaque navigation revalide les quatre polices. Mais le
+    // figer sur le HTML ou la feuille de style servirait une version périmée
+    // après un déploiement, puisque aucun nom ne porte d'empreinte.
+    const app = await buildServer(deps());
+
+    const police = await app.inject({ method: 'GET', url: '/fonts/plex-sans-400.woff2' });
+    expect(police.statusCode).toBe(200);
+    expect(police.headers['cache-control']).toContain('immutable');
+
+    for (const chemin of ['/ebooks', '/styles.css']) {
+      const reponse = await app.inject({ method: 'GET', url: chemin });
+      expect(reponse.statusCode).toBe(200);
+      expect(reponse.headers['cache-control']).not.toContain('immutable');
+    }
+    await app.close();
+  });
+
   it('sert les pages légales', async () => {
     // Elles doivent être atteignables avant l'achat : c'est ce qui rend les
     // conditions opposables, et les mentions légales sont obligatoires.
