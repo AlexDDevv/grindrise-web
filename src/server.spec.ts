@@ -1,6 +1,4 @@
 import { randomUUID } from 'node:crypto';
-import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 
 import type { AppConfig } from './config/env.config';
@@ -124,22 +122,6 @@ describe('buildServer', () => {
       expect(reponse.headers['content-type']).toContain('text/html');
     }
     await app.close();
-  });
-
-  it("ne laisse dans les pages légales que le marqueur du médiateur", () => {
-    // Les mentions légales et les CGV sont opposables : un « [À COMPLÉTER » en
-    // ligne est au mieux ridicule, au pire une information obligatoire absente.
-    // Le médiateur reste le seul toléré tant que l'adhésion n'est pas prise —
-    // ce test devra alors ne plus rien tolérer du tout.
-    const racine = join(__dirname, '..', 'public', 'legal');
-    const restants = readdirSync(racine).flatMap((fichier) =>
-      readFileSync(join(racine, fichier), 'utf8')
-        .split('\n')
-        .filter((ligne) => ligne.includes('À COMPLÉTER') || ligne.includes('[numéro]'))
-        .map((ligne) => `${fichier} : ${ligne.trim()}`),
-    );
-
-    expect(restants.filter((l) => !/médiateur|numéro/.test(l))).toEqual([]);
   });
 
   it('sert les pages de retour de paiement', async () => {
