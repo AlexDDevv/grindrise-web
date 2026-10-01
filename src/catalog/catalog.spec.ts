@@ -135,5 +135,28 @@ describe('catalogue', () => {
         expect(page).toContain(ebook.title);
       }
     });
+
+    it('montre une couverture par offre', () => {
+      // Les couvertures sont rejouées en HTML depuis le design des ebooks :
+      // un ebook ajouté au catalogue sans la sienne doit faire échouer ici.
+      for (const produit of CATALOG) {
+        expect(page).toContain(`data-cover="${produit.id}"`);
+      }
+    });
+
+    it('montre autant de volumes que l’offre contient de fichiers', () => {
+      for (const produit of CATALOG) {
+        const bloc = new RegExp(
+          `data-cover="${produit.id}"[\\s\\S]*?</button>`,
+        ).exec(page)![0];
+        expect([...bloc.matchAll(/class="cover-box"/g)]).toHaveLength(produit.files.length);
+      }
+    });
+
+    it('titre chaque couverture comme le catalogue', () => {
+      for (const ebook of CATALOG.flatMap((p) => p.files)) {
+        expect(page).toContain(`<span class="cover__title">${ebook.title}</span>`);
+      }
+    });
   });
 });

@@ -90,8 +90,9 @@ Statuts : `pending | paid | delivered | delivery_failed`.
   est désactivé. `docker-entrypoint.sh` émet le même format.
 - **Page d'achat et catalogue** : `public/ebooks/index.html` répète prix et
   titres à la main ; `src/catalog/catalog.spec.ts` verrouille la cohérence
-  (identifiants, prix affiché = prix facturé, titres) et la validité du script
-  inline. Tout changement de prix ou de titre touche les deux fichiers.
+  (identifiants, prix affiché = prix facturé, titres, une couverture par offre
+  et autant de volumes que de fichiers) et la validité du script inline. Tout
+  changement de prix ou de titre touche les deux fichiers.
 - **Schéma** : pas d'outil de migration, `applySchema` fait des
   `CREATE ... IF NOT EXISTS` et refuse de démarrer sur l'ancien schéma Stripe. Un
   changement de colonne sur une base existante doit être traité explicitement.
@@ -121,6 +122,16 @@ pas le shim Volta.
   effets CSS (`.fx-halo`, `.fx-grain`, `.reveal`). Aucun build, aucune requête
   tierce, polices auto-hébergées dans `public/fonts/`. Le gabarit d'email suit
   la même DA, en tableaux et styles en ligne.
+- **Couvertures** : la page d'achat rejoue en HTML la couverture de chaque
+  ebook, reprise de `grindrise-ebooks`
+  (`src/template/components/cover/cover.css`), plutôt que d'afficher des
+  images. Elle est construite aux dimensions d'une page A4 à 96 ppp
+  (794 × 1123) puis réduite par `transform: scale()` via `--cover-k` : le
+  rendu reste fidèle, seules les proportions changent. Le pack empile ses
+  trois volumes. Une seule substitution : le sous-titre, composé en IBM Plex
+  Serif dans l'ebook, est rendu dans la police de texte du site, qui n'héberge
+  pas cette famille. **Ce design est dupliqué** : une retouche des couvertures
+  dans `grindrise-ebooks` ne se propage pas toute seule.
 - Le tunnel de vente est servi sous `/ebooks` (`public/ebooks/`), la racine est
   réservée à la future landing GrindRise : `/success` et `/cancel` n'existent
   plus, les URL de retour envoyées à PayPlug sont `/ebooks/success` et

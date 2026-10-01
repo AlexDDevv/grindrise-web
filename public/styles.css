@@ -254,8 +254,10 @@ strong,b{font-weight:600;color:var(--c-ink)}
 .price{font:600 1.5rem/1 var(--f-text);color:#fff;font-variant-numeric:tabular-nums;white-space:nowrap}
 .price s{margin-left:var(--sp-2);font-size:.95rem;font-weight:400;color:var(--c-muted)}
 @media (min-width:720px){
-  .offer{grid-template-columns:minmax(0,1fr) auto;column-gap:var(--sp-6);align-items:end}
-  .offer__buy{grid-column:2;grid-row:1/4;flex-direction:column;align-items:flex-end;padding:0}
+  /* La couverture prend la colonne de gauche. Le prix et le bouton restent
+     sous la description : empilés à droite, ils ne laissaient que 240 px au
+     texte, le cadre de la page étant limité à 960 px. */
+  .offer{grid-template-columns:auto minmax(0,1fr);column-gap:var(--sp-5);align-items:start}
 }
 #erreur{margin-top:var(--sp-4)}
 .checkout-note{padding-top:var(--sp-4)}
@@ -338,3 +340,72 @@ strong,b{font-weight:600;color:var(--c-ink)}
   .prose h2,.prose h3{color:#000}
   a{color:#000}
 }
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Couverture d'ebook, rejouée en HTML
+
+   Les ebooks sont composés en HTML puis imprimés en PDF (projet
+   grindrise-ebooks). Ces règles reprennent celles de leur couverture
+   (`src/template/components/cover/cover.css`) afin que la page d'achat montre
+   l'objet réel, sans image à produire ni à maintenir.
+
+   La couverture est construite aux dimensions d'une page A4 à 96 ppp
+   (794 × 1123), puis réduite par `transform: scale()`. C'est ce qui garantit
+   un rendu fidèle : seules les proportions changent, jamais la composition.
+   `--cover-k` est le facteur d'échelle, et la boîte réserve la place
+   correspondante pour que la page ne saute pas au chargement.
+
+   Une seule substitution : le sous-titre est composé en IBM Plex Serif dans
+   l'ebook, police que le site n'héberge pas. Il est rendu dans la police de
+   texte, plutôt que d'ajouter 20 Ko pour quelques mots.
+   ─────────────────────────────────────────────────────────────────────────── */
+.cover-box{--cover-k:.26;display:block;position:relative;flex:none;width:calc(794px * var(--cover-k));height:calc(1123px * var(--cover-k));overflow:hidden;border:1px solid var(--c-line-strong);background:#141110}
+.ebook-cover{display:flex;flex-direction:column;width:794px;height:1123px;transform:scale(var(--cover-k));transform-origin:top left;background:#141110;color:#f3e7d3}
+.cover__frame{position:absolute;inset:26px;border:1px solid rgba(192,138,52,.3)}
+.cover__frame--inner{inset:34px;border-color:rgba(192,138,52,.12)}
+.cover__content{position:relative;display:flex;flex:1;flex-direction:column;justify-content:space-between;padding:96px 84px 84px}
+.cover__top{display:flex;flex-direction:column;gap:64px}
+.brand-mark{display:flex;align-items:center;gap:16px}
+.brand-mark__hexagon,.brand-mark__hexagon>span{display:flex;align-items:center;justify-content:center;clip-path:polygon(50% 0,100% 26%,100% 74%,50% 100%,0 74%,0 26%)}
+.brand-mark__hexagon{width:34px;height:38px;background:#c08a34}
+.brand-mark__hexagon>span{width:29px;height:32px;background:#141110}
+.brand-mark__name{font:500 12px/1 var(--f-mono);letter-spacing:.3em;text-transform:uppercase;color:#c08a34}
+.cover__heading{display:flex;flex-direction:column;gap:30px}
+.cover__label{font:500 11px/1 var(--f-mono);letter-spacing:.24em;text-transform:uppercase;color:rgba(224,178,106,.75)}
+.cover__title{font:700 74px/1.02 var(--f-display);letter-spacing:-.01em;color:#f6ecdb;text-wrap:balance}
+.cover__rule{width:96px;height:2px;background:#8e2f27}
+.cover__subtitle{max-width:440px;font:400 20px/1.55 var(--f-text);color:rgba(243,231,211,.72)}
+.cover__bottom{display:flex;align-items:flex-end;justify-content:space-between;padding-top:22px;border-top:1px solid rgba(243,231,211,.14)}
+.cover__meta{font:500 10px/1.7 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:rgba(243,231,211,.7)}
+
+/* Déclencheur : la couverture s'agrandit au clic, au doigt comme au clavier.
+   Le survol n'ajoute qu'un relief, il n'est jamais le seul chemin. */
+.cover-trigger{display:block;padding:0;border:0;background:none;cursor:zoom-in;transition:transform .18s ease}
+.cover-trigger:hover{transform:translateY(-2px)}
+.cover-trigger:focus-visible{outline:2px solid var(--c-gold-light);outline-offset:3px}
+
+/* Le pack : une pile de trois volumes. Un décalage latéral seul ne montrait
+   que deux traits sombres ; décalés en diagonale, les volumes du dessous se
+   lisent par leurs angles. */
+.cover-stack{--pile:13px;display:block;position:relative;width:calc(794px * .2 + 2 * var(--pile));height:calc(1123px * .2 + 2 * var(--pile))}
+.cover-stack .cover-box{position:absolute;--cover-k:.2}
+.cover-stack .cover-box:nth-child(1){left:0;top:calc(2 * var(--pile));z-index:3}
+.cover-stack .cover-box:nth-child(2){left:var(--pile);top:var(--pile);z-index:2}
+.cover-stack .cover-box:nth-child(3){left:calc(2 * var(--pile));top:0;z-index:1}
+
+/* Agrandissement */
+.apercu{max-width:min(92vw,560px);padding:0;border:1px solid var(--c-line-strong);background:var(--c-bg);color:var(--c-text)}
+.apercu--pack{max-width:min(94vw,760px)}
+.apercu::backdrop{background:rgba(13,11,9,.82)}
+.apercu__corps{display:flex;flex-wrap:wrap;gap:var(--sp-4);justify-content:center;padding:var(--sp-5)}
+.apercu__corps .cover-box{--cover-k:.52}
+.apercu__corps.apercu__corps--pack .cover-box{--cover-k:.22}
+.apercu__pied{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-4);padding:var(--sp-3) var(--sp-5);border-top:1px solid var(--c-line)}
+
+.offer__corps{display:grid;gap:var(--sp-3);align-content:start}
+@media (max-width:719px){
+  .cover-box{--cover-k:.22}
+  .cover-stack{--pile:11px;width:calc(794px * .17 + 2 * var(--pile));height:calc(1123px * .17 + 2 * var(--pile))}
+  .cover-stack .cover-box{--cover-k:.17}
+}
+@media (prefers-reduced-motion:reduce){.cover-trigger{transition:none}.cover-trigger:hover{transform:none}}
