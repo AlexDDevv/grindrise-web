@@ -69,11 +69,12 @@ describe('DeliveryService', () => {
       (m) => m[1],
     );
 
+    // Attendu dérivé du catalogue : ajouter un ebook au pack ne doit pas
+    // demander de retoucher ce test, seulement de le voir passer.
     expect(tokens).toHaveLength(PACK.files.length);
-    expect(tokens.map((t) => verifyDownloadToken(t, config.downloadTokenSecret))).toEqual([
-      { orderId: 'ord_1', fileIndex: 0 },
-      { orderId: 'ord_1', fileIndex: 1 },
-    ]);
+    expect(tokens.map((t) => verifyDownloadToken(t, config.downloadTokenSecret))).toEqual(
+      PACK.files.map((_, fileIndex) => ({ orderId: 'ord_1', fileIndex })),
+    );
     for (const ebook of PACK.files) {
       expect(message.text).toContain(ebook.title);
     }

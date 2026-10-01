@@ -37,7 +37,7 @@ mocks typés du client PayPlug / du provider email.
 Flux d'une commande :
 
 1. **Checkout** (`checkout/`) : le prix vient toujours de `catalog/catalog.ts`
-   (catalogue en dur : deux ebooks à l'unité et un pack des deux), jamais du
+   (catalogue en dur : trois ebooks à l'unité et un pack des trois), jamais du
    client. Crée la commande `pending`, puis le
    paiement PayPlug avec `metadata.order_id`, puis y rattache le `payment_id`.
 2. **Notification IPN** (`notification/`) : PayPlug **ne signe pas** ses

@@ -33,6 +33,12 @@ const ASSIETTE: Ebook = {
   fileName: 'ce-que-lassiette-construit.pdf',
 };
 
+const PROGRAMME: Ebook = {
+  title: 'Le programme qui tient',
+  subtitle: 'Adapter l’entraînement à sa vie, et non l’inverse',
+  fileName: 'le-programme-qui-tient.pdf',
+};
+
 export type Product = {
   id: string;
   name: string;
@@ -70,13 +76,24 @@ export const CATALOG: readonly Product[] = [
     files: [ASSIETTE],
   },
   {
-    id: 'pack-complet',
-    name: 'Les deux ebooks',
+    id: 'programme-qui-tient',
+    name: PROGRAMME.title,
     description:
-      'Le corps qui tient et Ce que l’assiette construit : l’entraînement et la nutrition, les deux piliers, pour 14,90 € au lieu de 19,80 €.',
-    priceCents: 1490,
+      'Pourquoi les programmes s’arrêtent, et ce qui les fait tenir : fréquence réaliste, progression, récupération et taux de présence, sans injonction à la discipline.',
+    priceCents: 990,
     currency: 'EUR',
-    files: [CORPS_QUI_TIENT, ASSIETTE],
+    files: [PROGRAMME],
+  },
+  {
+    id: 'pack-complet',
+    name: 'Les trois ebooks',
+    description:
+      'L’entraînement, la nutrition et la régularité : les trois volumes réunis, pour 19,90 € au lieu de 29,70 €.',
+    priceCents: 1990,
+    currency: 'EUR',
+    // Le nouveau fichier est ajouté EN FIN de liste : les indices 0 et 1 sont
+    // gravés dans les liens déjà envoyés aux acheteurs du pack à deux volumes.
+    files: [CORPS_QUI_TIENT, ASSIETTE, PROGRAMME],
   },
 ];
 
