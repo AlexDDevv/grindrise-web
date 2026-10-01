@@ -76,16 +76,24 @@ curl -X POST https://api.brevo.com/v3/webhooks \
 5. Vérifier après un achat de test : le journal de la commande doit contenir
    `email_sent` **puis** `email_delivered`.
 
-## 6. Reste à décider
+## 6. Le suivi des ouvertures et des clics
 
-Brevo enregistre aujourd'hui les ouvertures et les clics de nos emails de
-livraison : ses statistiques montrent des événements `opened` et `clicks`. Deux
-conséquences :
+Brevo insère un pixel de mesure dans nos emails de livraison et fait passer
+leurs liens par un redirecteur. Ses statistiques le confirment : les événements
+`opened` et `clicks` existent sur nos envois.
 
-- un pixel de suivi est inséré dans un email dont la politique de
-  confidentialité ne mentionne aucun traceur ;
-- le suivi des clics réécrit les liens, donc le lien de téléchargement signé
-  passe par un redirecteur Brevo.
+**Ce suivi ne peut pas être désactivé depuis l'interface** pour les emails
+transactionnels. Brevo l'a confirmé publiquement en mai 2024 : « Disabling
+tracking is not planned, for security reasons », avec une ouverture réservée
+aux plans Enterprise. La seule voie est une demande à leur support, traitée au
+cas par cas.
 
-Les deux se désactivent dans les réglages transactionnels de Brevo. Décision à
-prendre avant l'ouverture des ventes.
+Décision du 2026-10-01 : **le mentionner plutôt que le combattre**. La
+politique de confidentialité décrit désormais ce pixel, son utilité — vérifier
+qu'une commande payée a bien été reçue — et la limite que nous nous imposons :
+seul l'état de remise entre dans notre journal. Le webhook ignore
+explicitement `opened`, `click` et leurs variantes, et aucun test ne doit
+autoriser leur enregistrement.
+
+Une demande de désactivation reste à adresser au support Brevo. Si elle
+aboutit, le texte de la politique devra être repris.
