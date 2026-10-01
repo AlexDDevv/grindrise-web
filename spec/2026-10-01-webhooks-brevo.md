@@ -95,5 +95,5 @@ seul l'état de remise entre dans notre journal. Le webhook ignore
 explicitement `opened`, `click` et leurs variantes, et aucun test ne doit
 autoriser leur enregistrement.
 
-Une demande de désactivation reste à adresser au support Brevo. Si elle
-aboutit, le texte de la politique devra être repris.
+Aucune demande n'a été faite auprès du support Brevo, et il n'est pas prévu
+d'en faire une. Si cela changeait, le texte de la politique devrait être repris.
