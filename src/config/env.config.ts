@@ -16,6 +16,9 @@ export type AppConfig = {
   /** Déduit du préfixe de la clé : PayPlug n'a pas d'endpoint de test séparé. */
   payplugMode: PayPlugMode;
   brevoApiKey: string;
+  /** Jeton attendu en `Authorization: Bearer` sur /api/brevo/webhook. Brevo ne
+   *  signe pas ses appels : ce jeton est la seule preuve d'origine. */
+  brevoWebhookSecret: string;
   brevoSenderEmail: string;
   brevoSenderName: string;
   brevoReplyTo?: string;
@@ -45,6 +48,7 @@ export function validateEnv(raw: Record<string, unknown>): AppConfig {
   // démarrer le serveur et reporterait l'échec au premier achat, en 401.
   const payplugSecretKey = required('PAYPLUG_SECRET_KEY');
   const brevoApiKey = required('BREVO_API_KEY');
+  const brevoWebhookSecret = required('BREVO_WEBHOOK_SECRET');
   const brevoSenderEmail = required('BREVO_SENDER_EMAIL');
   const downloadTokenSecret = required('DOWNLOAD_TOKEN_SECRET');
   const publicBaseUrl = required('PUBLIC_BASE_URL');
@@ -95,6 +99,7 @@ export function validateEnv(raw: Record<string, unknown>): AppConfig {
     payplugSecretKey,
     payplugMode,
     brevoApiKey,
+    brevoWebhookSecret,
     brevoSenderEmail,
     brevoSenderName: optional('BREVO_SENDER_NAME', 'Grindrise'),
     brevoReplyTo:

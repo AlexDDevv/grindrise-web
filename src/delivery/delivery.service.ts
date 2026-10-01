@@ -58,7 +58,9 @@ export class DeliveryService {
     });
 
     try {
-      await email.send({ to: { email: order.email }, ...message });
+      // L'étiquette revient dans le webhook Brevo : c'est elle qui relie un
+      // rebond ou une livraison réelle à cette commande.
+      await email.send({ to: { email: order.email }, ...message, tags: [order.id] });
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       orders.markDeliveryFailed(order.id, reason);

@@ -55,6 +55,8 @@ export type OrderEventType =
   | 'payment_confirmed'
   | 'payment_already_processed'
   | 'email_sent'
+  | 'email_delivered'
+  | 'email_failed'
   | 'delivery_failed'
   | 'download_served'
   | 'download_refused';

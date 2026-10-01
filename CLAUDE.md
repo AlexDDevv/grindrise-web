@@ -48,8 +48,14 @@ Flux d'une commande :
 3. **Idempotence** : `orders.markPaid` est le verrou — seule la transition
    `pending → paid` déclenche la livraison. Ne jamais contourner ce passage.
 4. **Livraison** (`delivery/delivery.service.ts`) : signe un token HMAC
-   (`tokens/`), envoie l'email ; échec → `delivery_failed`, rattrapage manuel. La
-   route répond 200 quand même pour éviter les renvois inutiles de PayPlug.
+   (`tokens/`), envoie l'email étiqueté avec l'`orderId` ; échec → `delivery_failed`,
+   rattrapage manuel. La route répond 200 quand même pour éviter les renvois
+   inutiles de PayPlug.
+   `email_sent` ne prouve que l'acceptation par Brevo. La remise réelle arrive
+   par webhook (`email/brevo.webhook.routes.ts`) : `email_delivered`, ou
+   `email_failed` et retour en `delivery_failed` sur échec définitif. Brevo ne
+   signe pas ses appels, l'origine est prouvée par `BREVO_WEBHOOK_SECRET` en
+   Bearer, et les ouvertures et clics sont ignorés (aucun traceur annoncé).
 5. **Téléchargement** (`download/`) : vérifie token, expiration et quota
    (`DOWNLOAD_MAX_USES`), le fichier existe avant de consommer le quota. Les PDF
    sont dans `${DATA_DIR}/ebooks/`, déposés à la main, hors dépôt.

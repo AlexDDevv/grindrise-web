@@ -3,6 +3,7 @@ import { validateEnv } from './env.config';
 const complet = {
   PAYPLUG_SECRET_KEY: 'sk_test_123',
   BREVO_API_KEY: 'xkeysib-123',
+  BREVO_WEBHOOK_SECRET: 'jeton-de-test',
   BREVO_SENDER_EMAIL: 'contact@example.com',
   DOWNLOAD_TOKEN_SECRET: 'un-secret-de-test',
   PUBLIC_BASE_URL: 'http://localhost:3000',

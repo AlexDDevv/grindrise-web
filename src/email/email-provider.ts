@@ -15,6 +15,12 @@ export type EmailMessage = {
   subject: string;
   html: string;
   text: string;
+  /**
+   * Étiquettes transmises au fournisseur et renvoyées telles quelles dans ses
+   * webhooks. C'est ce qui permet de rattacher un événement de livraison à sa
+   * commande sans jamais faire transiter l'email dans le journal d'audit.
+   */
+  tags?: readonly string[];
 };
 
 export interface EmailProvider {

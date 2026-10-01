@@ -55,6 +55,10 @@ export class BrevoEmailProvider implements EmailProvider {
       textContent: message.text,
     };
 
+    if (message.tags && message.tags.length > 0) {
+      payload.tags = [...message.tags];
+    }
+
     if (this.sender.replyTo) {
       payload.replyTo = { email: this.sender.replyTo };
     }

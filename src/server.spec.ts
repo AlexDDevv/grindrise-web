@@ -16,6 +16,7 @@ const config: AppConfig = {
   payplugSecretKey: 'sk_test_123',
   payplugMode: 'test',
   brevoApiKey: 'xkeysib-123',
+  brevoWebhookSecret: 'jeton-de-test',
   brevoSenderEmail: 'contact@example.com',
   brevoSenderName: 'Grindrise',
   downloadTokenSecret: 'secret-de-test',

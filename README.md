@@ -54,6 +54,7 @@ Toutes sont documentées dans [`.env.example`](.env.example). Les obligatoires :
 | ----------------------- | ----------------------------------------------------- |
 | `PAYPLUG_SECRET_KEY`    | Clé secrète PayPlug (`sk_test_…` puis `sk_live_…`)    |
 | `BREVO_API_KEY`         | Clé API Brevo                                         |
+| `BREVO_WEBHOOK_SECRET`  | Jeton Bearer des webhooks de livraison Brevo          |
 | `BREVO_SENDER_EMAIL`    | Expéditeur validé côté Brevo                          |
 | `DOWNLOAD_TOKEN_SECRET` | Secret HMAC des liens de téléchargement               |
 | `PUBLIC_BASE_URL`       | URL publique, sert à bâtir les liens envoyés par mail |

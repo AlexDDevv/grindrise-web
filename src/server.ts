@@ -9,6 +9,7 @@ import type { AppConfig } from './config/env.config';
 import type { OrdersRepository } from './db/orders.repository';
 import type { DeliveryService } from './delivery/delivery.service';
 import { DOWNLOAD_MAX_PARAM_LENGTH, downloadRoutes } from './download/download.routes';
+import { brevoWebhookRoutes } from './email/brevo.webhook.routes';
 import type { EmailProvider } from './email/email-provider';
 import { notificationRoutes } from './notification/notification.routes';
 import type { PayPlugClient } from './payment/payplug.client';
@@ -101,6 +102,7 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
     delivery: deps.delivery,
   });
   await app.register(downloadRoutes, { config: deps.config, orders: deps.orders });
+  await app.register(brevoWebhookRoutes, { config: deps.config, orders: deps.orders });
 
   return app;
 }
